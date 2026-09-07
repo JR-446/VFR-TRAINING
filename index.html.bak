@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VFR Radio — Entraînement radiotéléphonie (F-HUET)</title>
+<script>try{var _t=localStorage.getItem('vfr-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light');document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+<style>
+  :root{
+    --bg:#f4f1fb;
+    --ink:#1d1d1f; --ink2:#57525f; --ink3:#8b8593;
+    --violet:#7c3aed; --violet-d:#6d28d9; --violet-l:#a855f7; --fuchsia:#d946ef; --indigo:#6366f1;
+    --grad:linear-gradient(120deg,#6d28d9 0%,#8b5cf6 48%,#c084fc 100%);
+    --grad-text:linear-gradient(120deg,#7c3aed 0%,#a855f7 46%,#e879f9 100%);
+    --card:rgba(255,255,255,.72);
+    --card-brd:rgba(124,58,237,.14);
+    --shadow:0 20px 55px -22px rgba(76,29,149,.45);
+    --ok:#16a34a; --warn:#d97706; --err:#e11d48;
+    --r:24px;
+    --sans:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --mono:'SF Mono',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;min-height:100vh;padding:52px 20px 72px;color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    background:
+      radial-gradient(60% 46% at 12% -4%, rgba(168,85,247,.22), transparent 60%),
+      radial-gradient(48% 40% at 102% 8%, rgba(217,70,239,.18), transparent 58%),
+      radial-gradient(60% 50% at 50% 108%, rgba(99,102,241,.16), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;}
+  body::before{content:"";position:fixed;top:-18%;right:-12%;width:58vmax;height:58vmax;z-index:-1;
+    background:radial-gradient(circle at 32% 32%, rgba(139,92,246,.30), transparent 62%);
+    filter:blur(24px);animation:float1 20s ease-in-out infinite;pointer-events:none}
+  .wrap{max-width:860px;margin:0 auto}
+
+  /* ---- hero ---- */
+  .topbar{display:flex;flex-direction:column;align-items:center;text-align:center;margin:0 0 40px}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--violet);margin-bottom:14px}
+  h1{margin:0;font-size:clamp(40px,7vw,64px);line-height:1.02;font-weight:700;letter-spacing:-.035em;
+    background:var(--grad-text);-webkit-background-clip:text;background-clip:text;
+    color:transparent;-webkit-text-fill-color:transparent}
+  .tagline{margin:16px auto 0;max-width:540px;font-size:17px;line-height:1.5;color:var(--ink2)}
+  .badge{display:inline-flex;align-items:center;gap:9px;margin-top:22px;padding:9px 18px;border-radius:999px;
+    background:rgba(255,255,255,.6);border:1px solid var(--card-brd);color:var(--ink2);
+    font-size:13px;font-weight:600;letter-spacing:.01em;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:var(--shadow)}
+  .badge::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--grad);box-shadow:0 0 10px rgba(124,58,237,.6)}
+
+  /* ---- cards ---- */
+  .grid{display:grid;gap:22px}
+  .panel{background:var(--card);border:1px solid var(--card-brd);border-radius:var(--r);padding:28px;
+    backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+    box-shadow:var(--shadow);animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
+  .panel h2{margin:0 0 20px;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--violet)}
+
+  /* ---- form ---- */
+  label{display:block;font-size:12px;color:var(--ink3);margin-bottom:8px;font-weight:600;letter-spacing:.01em}
+  select,input[type=text]{width:100%;font-family:var(--sans);font-size:15px;color:var(--ink);
+    background:rgba(255,255,255,.78);border:1px solid var(--card-brd);border-radius:14px;padding:13px 14px;
+    appearance:none;-webkit-appearance:none;transition:border-color .2s,box-shadow .2s}
+  select{cursor:pointer;padding-right:40px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%237c3aed' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 15px center}
+  select option{color:#1d1d1f;background:#fff}
+  select:focus,input[type=text]:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(124,58,237,.16)}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+  .briefing{font-size:15px;line-height:1.6;color:var(--ink2)}
+  .briefing b{color:var(--ink)}
+
+  /* ---- buttons ---- */
+  .btn{cursor:pointer;font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:-.01em;
+    padding:13px 22px;border-radius:999px;border:1px solid var(--card-brd);background:rgba(255,255,255,.72);color:var(--violet-d);
+    transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .18s,background .18s}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 14px 28px -14px rgba(124,58,237,.55);background:#fff}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn:focus-visible,select:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+  .btn.primary{background:var(--grad);border:none;color:#fff;box-shadow:0 14px 32px -12px rgba(109,40,217,.7)}
+  .btn.primary:hover{box-shadow:0 20px 42px -12px rgba(109,40,217,.85)}
+  .btn.ptt{width:100%;padding:24px;font-size:17px;font-weight:700;letter-spacing:.01em;border:none;color:#fff;
+    background:var(--grad);border-radius:20px;box-shadow:0 18px 44px -14px rgba(109,40,217,.75)}
+  .btn.ptt:hover{transform:translateY(-2px)}
+  .btn.ptt.live{background:linear-gradient(120deg,#db2777,#e879f9);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(219,39,119,.5)}50%{box-shadow:0 0 0 16px rgba(219,39,119,0)}}
+  .toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;align-items:center}
+  .checkbox{display:flex;align-items:center;gap:8px;margin:0;color:var(--ink2);font-size:14px;font-weight:500;cursor:pointer}
+  .checkbox input{width:auto;accent-color:var(--violet)}
+
+  /* ---- comms ---- */
+  .radio{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--ink2);margin-bottom:18px;font-weight:500}
+  #freqLabel{font-weight:600;color:var(--ink)}
+  #cfgLabel{color:var(--ink3)}
+  #turnLabel{color:var(--ink3);font-size:13px}
+  .onair{width:12px;height:12px;border-radius:50%;background:#d3cddd;transition:.2s;flex:none}
+  .onair.tx{background:var(--violet);box-shadow:0 0 0 4px rgba(124,58,237,.18),0 0 16px var(--violet)}
+  .onair.rx{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18),0 0 16px #22c55e}
+  .display{min-height:78px;border-radius:18px;padding:20px 22px;font-size:17px;line-height:1.5}
+  .display .who{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:10px}
+  .display.atc{background:linear-gradient(135deg,rgba(124,58,237,.10),rgba(217,70,239,.05));border:1px solid rgba(124,58,237,.16)}
+  .display.pilot{background:rgba(255,255,255,.66);border:1px solid var(--card-brd)}
+  .sub{color:var(--ink3);font-style:normal}
+  .heard{color:var(--indigo);font-family:var(--mono);font-size:15px;margin-top:4px}
+  .feedback{margin-top:12px;font-size:14px;font-weight:500}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--card-brd);background:rgba(255,255,255,.6);color:var(--ink2)}
+  .chip.got{color:var(--ok);border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.08)}
+  .chip.miss{color:var(--err);border-color:rgba(225,29,72,.3);background:rgba(225,29,72,.07)}
+  .hint{margin-top:14px;font-size:14px;line-height:1.55;color:var(--violet-d);
+    background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(217,70,239,.05));
+    border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:14px 16px;display:none}
+
+  /* ---- score + log ---- */
+  .meters{display:flex;gap:30px;flex-wrap:wrap}
+  .meters>div{font-size:13px;color:var(--ink3);font-weight:600}
+  .meters b{display:block;margin-top:4px;font-size:26px;font-weight:700;letter-spacing:-.02em;
+    background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+  .log{max-height:260px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;margin-top:16px;border-top:1px solid var(--card-brd);padding-top:14px}
+  .log .l{padding:5px 0;border-bottom:1px solid rgba(124,58,237,.07)}
+  .log .la{color:var(--violet-d)} .log .lp{color:var(--indigo)} .log .ls{color:var(--ink3)}
+
+  .note{font-size:12.5px;color:var(--ink3);margin-top:18px;line-height:1.6}
+  .note code{background:rgba(124,58,237,.1);padding:2px 6px;border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--violet-d)}
+  .note b{color:var(--ink2)}
+  a{color:var(--violet)}
+  .fill{display:flex;gap:10px;margin-top:14px}
+  .fill input{flex:1}
+  .hidden{display:none!important}
+
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-5%,4%)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+
+  /* ===== sélecteurs épurés ===== */
+  .field{margin-bottom:18px}
+  .segmented{display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(124,58,237,.07);border:1px solid var(--card-brd)}
+  .seg{flex:1;border:none;background:transparent;color:var(--ink2);font-family:var(--sans);font-size:14px;font-weight:600;
+    padding:11px 8px;border-radius:9px;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s}
+  .seg:hover{color:var(--ink)}
+  .seg.is-on{background:var(--grad);color:#fff;box-shadow:0 8px 18px -10px rgba(109,40,217,.75)}
+  .options{margin-top:16px;gap:16px}
+  .voicepick{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink2);font-weight:500;margin:0}
+  .voicepick select{width:auto;padding:8px 32px 8px 12px;font-size:13px;border-radius:10px}
+  .voicestatus{font-size:12px;color:var(--ink3);font-weight:500}
+  html[data-theme="dark"] .segmented{background:rgba(255,255,255,.05)}
+
+  /* ===== fil de discussion (style iMessage) ===== */
+  .thread{display:flex;flex-direction:column;gap:7px;max-height:min(52vh,440px);overflow-y:auto;
+    padding:4px 2px;margin-bottom:18px}
+  .row{display:flex;flex-direction:column;max-width:84%}
+  .row.atc{align-self:flex-start;align-items:flex-start}
+  .row.me{align-self:flex-end;align-items:flex-end}
+  .row.sys{align-self:center;align-items:center;max-width:94%}
+  .tag{font-size:11px;font-weight:600;color:var(--ink3);margin:2px 0 3px 13px}
+  .bubble{padding:11px 16px;font-size:16px;line-height:1.4;border-radius:20px;word-break:break-word;
+    animation:pop .26s cubic-bezier(.2,.8,.2,1) both;box-shadow:0 1px 2px rgba(76,29,149,.06)}
+  .row.atc .bubble{background:#e8e5f0;color:#1d1d1f;border-bottom-left-radius:7px}
+  .row.me .bubble{color:#fff;background:linear-gradient(135deg,#7c3aed,#a855f7);border-bottom-right-radius:7px}
+  .row.me .bubble.live{background:linear-gradient(135deg,#9b6cf2,#c9a2f5)}
+  .sys{font-size:12.5px;color:var(--ink3);text-align:center;padding:4px 12px;line-height:1.5}
+  .sys b{color:var(--ink2)}
+  .sys code{background:rgba(124,58,237,.12);padding:1px 5px;border-radius:5px;font-size:11px}
+  .caption{margin:5px 8px 2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;font-size:12px;font-weight:600}
+  .caption .chip{padding:3px 9px;font-size:11px}
+  .bubble.typing{display:inline-flex;gap:5px;align-items:center;padding:15px 17px}
+  .bubble.typing span{width:7px;height:7px;border-radius:50%;background:#9990a8;animation:typing 1.25s infinite}
+  .bubble.typing span:nth-child(2){animation-delay:.18s}
+  .bubble.typing span:nth-child(3){animation-delay:.36s}
+  @keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-4px);opacity:.9}}
+  @keyframes pop{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+  .composer .coach{font-size:14.5px;color:var(--ink2);font-weight:500;line-height:1.5;
+    padding:12px 16px;border-radius:14px;background:rgba(124,58,237,.06);border:1px solid var(--card-brd)}
+  .composer .toolbar:first-of-type{margin-top:16px}
+
+  /* ===== interrupteur de thème ===== */
+  .theme-toggle{position:fixed;top:22px;right:22px;z-index:20;width:46px;height:46px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;line-height:1;
+    background:rgba(255,255,255,.6);border:1px solid var(--card-brd);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:var(--shadow);
+    transition:transform .25s cubic-bezier(.2,.7,.2,1)}
+  .theme-toggle:hover{transform:translateY(-2px) rotate(-10deg)}
+
+  /* ===== radar (panneau score) ===== */
+  .score-head{display:flex;justify-content:space-between;align-items:flex-start;gap:22px;flex-wrap:wrap}
+  .radar{position:relative;width:108px;height:108px;border-radius:50%;flex:none;overflow:hidden;
+    border:1px solid var(--card-brd);
+    background:repeating-radial-gradient(circle at center, transparent 0 12px, rgba(124,58,237,.10) 12px 13px);
+    box-shadow:inset 0 0 22px rgba(124,58,237,.18)}
+  .radar::before,.radar::after{content:"";position:absolute;background:rgba(124,58,237,.16)}
+  .radar::before{left:50%;top:0;width:1px;height:100%;transform:translateX(-.5px)}
+  .radar::after{top:50%;left:0;height:1px;width:100%;transform:translateY(-.5px)}
+  .radar-sweep{position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(139,92,246,.6), rgba(139,92,246,.04) 58deg, transparent 72deg);
+    animation:radar 3.2s linear infinite}
+  .radar .blip{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--violet-l);
+    box-shadow:0 0 8px var(--violet-l);transform:translate(-50%,-50%);animation:blip 3.2s ease-in-out infinite}
+  @keyframes radar{to{transform:rotate(360deg)}}
+  @keyframes blip{0%,18%{opacity:0}26%{opacity:1}72%,100%{opacity:0}}
+
+  /* ===== thème sombre — violet nuit ===== */
+  html[data-theme="dark"]{
+    --bg:#0b0716;
+    --ink:#f1ecfb; --ink2:#b7afce; --ink3:#7d7597;
+    --card:rgba(30,21,52,.55); --card-brd:rgba(168,85,247,.24);
+    --shadow:0 24px 60px -24px rgba(0,0,0,.75);
+    --grad-text:linear-gradient(120deg,#a855f7 0%,#c084fc 46%,#f0abfc 100%);
+    --ok:#34d399; --warn:#fbbf24; --err:#fb7185;
+  }
+  html[data-theme="dark"] body{
+    background:
+      radial-gradient(60% 46% at 12% -4%, rgba(139,92,246,.30), transparent 60%),
+      radial-gradient(48% 40% at 102% 8%, rgba(217,70,239,.22), transparent 58%),
+      radial-gradient(60% 50% at 50% 108%, rgba(79,70,229,.26), transparent 60%),
+      var(--bg);}
+  html[data-theme="dark"] body::before{background:radial-gradient(circle at 32% 32%, rgba(168,85,247,.36), transparent 62%)}
+  html[data-theme="dark"] .badge,
+  html[data-theme="dark"] .theme-toggle{background:rgba(255,255,255,.06)}
+  html[data-theme="dark"] select,
+  html[data-theme="dark"] input[type=text]{background:rgba(255,255,255,.05)}
+  html[data-theme="dark"] select option{background:#160f2b;color:#f1ecfb}
+  html[data-theme="dark"] .btn:not(.primary):not(.ptt){background:rgba(255,255,255,.05);color:#d9ccf9}
+  html[data-theme="dark"] .btn:not(.primary):not(.ptt):hover{background:rgba(255,255,255,.11)}
+  html[data-theme="dark"] .display.pilot{background:rgba(255,255,255,.045)}
+  html[data-theme="dark"] .display.atc{background:linear-gradient(135deg,rgba(139,92,246,.22),rgba(217,70,239,.10))}
+  html[data-theme="dark"] .chip{background:rgba(255,255,255,.05)}
+  html[data-theme="dark"] .chip.got{background:rgba(52,211,153,.12)}
+  html[data-theme="dark"] .chip.miss{background:rgba(251,113,133,.12)}
+  html[data-theme="dark"] .row.atc .bubble{background:#282141;color:#ece6fb}
+  html[data-theme="dark"] .bubble.typing span{background:#8a80a6}
+  html[data-theme="dark"] .composer .coach{background:rgba(255,255,255,.05)}
+</style>
+</head>
+<body>
+<button id="themeToggle" class="theme-toggle" aria-label="Basculer le thème clair / sombre" title="Thème clair / sombre">🌙</button>
+<div class="wrap">
+  <header class="topbar">
+    <div class="eyebrow">Radiotéléphonie VFR</div>
+    <h1>VFR Radio</h1>
+    <p class="tagline">Le contrôle vous parle de vive voix, vous répondez au micro. Indicatif&nbsp;F-HUET · Tecnam&nbsp;P2008.</p>
+    <div class="badge" id="statusBadge">EN ATTENTE</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- CONFIG -->
+    <div class="panel" id="configPanel">
+      <h2>Briefing du vol</h2>
+      <div class="field">
+        <label>Difficulté</label>
+        <div class="segmented" id="segDiff">
+          <button type="button" class="seg" data-v="1">Débutant</button>
+          <button type="button" class="seg is-on" data-v="2">Intermédiaire</button>
+          <button type="button" class="seg" data-v="3">Confirmé</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Espace / organisme</label>
+        <select id="selAir">
+          <option value="ALL" selected>Tous les espaces</option>
+          <option value="SIV">SIV — information de vol</option>
+          <option value="TMA">TMA — approche</option>
+          <option value="CTR">CTR — tour de contrôle</option>
+          <option value="CLD">Classe D — pénétration (CTR/TMA)</option>
+          <option value="AFIS">AFIS — information aérodrome</option>
+          <option value="AUTO">Auto-information — non contrôlé</option>
+          <option value="ZONE">Pénétration de zone</option>
+          <option value="URG">Pannes & urgences</option>
+          <option value="DER">Déroutements</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Scénario</label>
+        <select id="selScn"></select>
+      </div>
+
+      <div class="briefing" id="brief"></div>
+
+      <div class="toolbar">
+        <button class="btn primary" id="btnStart">Démarrer</button>
+        <button class="btn" id="btnRandom">🎲 Aléatoire</button>
+      </div>
+      <div class="toolbar options">
+        <label class="checkbox"><input type="checkbox" id="chkSub"> Sous-titres</label>
+        <label class="checkbox"><input type="checkbox" id="chkSfx" checked> Sons radio</label>
+        <label class="voicepick">Voix
+          <select id="selVoice">
+            <option value="browser" selected>Voix du système (auto)</option>
+            <option value="natural">Naturelle (offline)</option>
+          </select>
+        </label>
+        <span class="voicestatus" id="voiceStatus"></span>
+      </div>
+      <div class="note" id="compatNote"></div>
+    </div>
+
+    <!-- COMMS -->
+    <div class="panel hidden" id="commsPanel">
+      <div class="radio">
+        <span class="onair" id="onair"></span>
+        <span id="freqLabel">—</span>
+        <span id="cfgLabel"></span>
+        <span style="margin-left:auto" id="turnLabel"></span>
+      </div>
+
+      <div class="thread" id="thread"></div>
+
+      <div class="composer">
+        <div class="coach" id="pilotPrompt">…</div>
+        <div class="hint" id="hintBox"></div>
+        <div class="toolbar">
+          <button class="btn ptt" id="btnPTT">🎙️ APPUYER POUR PARLER</button>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="btnHint">💡 Indice</button>
+          <button class="btn" id="btnReplay">🔁 Répéter</button>
+          <button class="btn" id="btnSkip">⏭ Passer</button>
+          <button class="btn" id="btnAbort" style="margin-left:auto">■ Terminer</button>
+        </div>
+        <div class="fill hidden" id="typeFallback">
+          <input type="text" id="typeInput" placeholder="Micro indisponible ? Tapez votre réponse et Entrée">
+        </div>
+      </div>
+    </div>
+
+    <!-- SCORE + LOG -->
+    <div class="panel hidden" id="scorePanel">
+      <div class="score-head">
+        <div>
+          <h2>Contrôle radar</h2>
+          <div class="meters">
+            <div>Étape <b id="mStep">0/0</b></div>
+            <div>Score <b id="mScore">100%</b></div>
+            <div>Éléments <b id="mItems">0/0</b></div>
+          </div>
+        </div>
+        <div class="radar" aria-hidden="true">
+          <div class="radar-sweep"></div>
+          <span class="blip" style="left:66%;top:36%;animation-delay:.7s"></span>
+          <span class="blip" style="left:38%;top:64%;animation-delay:1.9s"></span>
+          <span class="blip" style="left:57%;top:71%;animation-delay:2.7s"></span>
+        </div>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. AIDES PHONÉTIQUES — le contrôleur "parle" (synthèse vocale)
+   ============================================================ */
+const DIG={'0':'zéro','1':'un','2':'deux','3':'trois','4':'quatre','5':'cinq','6':'six','7':'sept','8':'huit','9':'neuf'};
+const ACRO={QNH:'Q N H',QFE:'Q F E',QFU:'Q F U',QDM:'Q D M',VFR:'V F R',VMC:'V M C',IMC:'I M C',
+            CTR:'C T R',TMA:'T M A',SIV:'S I V',AFIS:'A F I S',VAC:'V A C',TWR:'T W R',OACI:'O A C I',ATZ:'A T Z'};
+
+/* Transforme un texte R/T en un texte optimisé pour la voix :
+   - indicatifs → phonétique OACI
+   - sigles → épelés
+   - suites de chiffres → chiffre par chiffre (phraséologie), "." → "décimal"
+   Règle d'écriture des scénarios : ce qui se dit chiffre par chiffre
+   (QNH, transpondeur, piste, fréquence, cap, vent en °) est écrit EN CHIFFRES ;
+   ce qui se dit en nombre naturel (altitudes) est écrit EN LETTRES. */
+function speechify(t){
+  let s=' '+t+' ';
+  s=s.replace(/\bF-?HUET\b/gi,' Fox-trotte Hôtel Uniforme Écho Tango ');
+  s=s.replace(/\bF-?ET\b/gi,' Fox-trotte Écho Tango ');
+  s=s.replace(/\b(QNH|QFE|QFU|QDM|VFR|VMC|IMC|CTR|TMA|SIV|AFIS|VAC|TWR|OACI|ATZ)\b/g,m=>ACRO[m]);
+  s=s.replace(/\d+(?:\.\d+)?/g,num=>num.split('').map(c=>c==='.'?'décimal':DIG[c]).join(' '));
+  return s.replace(/\s+/g,' ').trim();
+}
+
+let VOICE=null;
+function pickVoice(){
+  const vs=speechSynthesis.getVoices().filter(v=>/^fr/i.test(v.lang));
+  if(!vs.length){ VOICE=null; return; }
+  // On privilégie les voix les plus naturelles disponibles (Google FR sur Chrome, voix Apple "enhanced"…)
+  const prefs=[/google/i,/amélie|amelie/i,/aurélie|aurelie/i,/audrey/i,/marie/i,/virginie/i,/thomas/i,/nicolas/i,/siri/i,/enhanced|premium|natural|neural/i];
+  for(const rx of prefs){ const v=vs.find(x=>rx.test(x.name)); if(v){ VOICE=v; return; } }
+  VOICE = vs.find(v=>/fr[-_]FR/i.test(v.lang)) || vs[0];
+}
+let voiceUserChose=false;
+function populateVoices(){
+  const sel=document.getElementById('selVoice'); if(!sel || !('speechSynthesis' in window)) return;
+  const vs=speechSynthesis.getVoices().filter(v=>/^fr/i.test(v.lang));
+  const keep = voiceUserChose ? sel.value : null;
+  sel.innerHTML='';
+  const b=document.createElement('option'); b.value='browser'; b.textContent='Voix du système (auto)'; sel.appendChild(b);
+  vs.forEach(v=>{ const o=document.createElement('option'); o.value=v.name; o.textContent=v.name+(/enhanced|premium|siri|neural/i.test(v.name)?' ✨':''); sel.appendChild(o); });
+  const o=document.createElement('option'); o.value='natural'; o.textContent='Naturelle (offline, expérimental)'; sel.appendChild(o);
+  if(keep && [...sel.options].some(x=>x.value===keep)) sel.value=keep;
+  else sel.value = (VOICE&&VOICE.name) || 'browser';   // défaut = meilleure voix système, jamais Piper
+}
+if('speechSynthesis' in window){ pickVoice(); populateVoices(); speechSynthesis.onvoiceschanged=()=>{ pickVoice(); populateVoices(); }; }
+
+/* ---- sons radio (Web Audio, synthétisés — aucun fichier) ---- */
+let AC=null;
+function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); }catch(e){ AC=null; } return AC; }
+const sfx={
+  on(){ const c=document.getElementById('chkSfx'); return c?c.checked:true; },
+  burst(dur,filter,freq,gain){
+    if(!this.on())return; const c=ac(); if(!c)return;
+    const n=Math.max(1,(c.sampleRate*dur)|0), buf=c.createBuffer(1,n,c.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+    const src=c.createBufferSource(); src.buffer=buf;
+    const f=c.createBiquadFilter(); f.type=filter; f.frequency.value=freq; f.Q.value=0.8;
+    const g=c.createGain(), t=c.currentTime;
+    g.gain.setValueAtTime(gain,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start(); src.stop(t+dur+0.02);
+  },
+  click(){ this.burst(0.045,'highpass',1400,0.09); },   // alternat (key-up)
+  squelch(){ this.burst(0.16,'lowpass',1500,0.11); },   // queue de squelch
+  hiss(){ this.burst(0.6,'lowpass',1100,0.05); },       // statique / silence radio
+  beep(){ if(!this.on())return; const c=ac(); if(!c)return; const o=c.createOscillator(), g=c.createGain(), t=c.currentTime;
+    o.type='sine'; o.frequency.value=920; g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.05,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(t+0.14); }
+};
+
+/* ---- VOIX : neuronale offline (Piper/VITS) avec repli navigateur ---- */
+const Voice={
+  voiceId:'fr_FR-siwis-medium', piper:null, ready:false, loading:false, failed:false,
+  mode(){ const s=document.getElementById('selVoice'); return s?s.value:'natural'; },
+  status(t){ const e=document.getElementById('voiceStatus'); if(e) e.textContent=t||''; },
+  async init(){
+    if(this.ready) return true;
+    if(this.failed) return false;
+    if(this.loading){ while(this.loading) await new Promise(r=>setTimeout(r,150)); return this.ready; }
+    this.loading=true; this.status('⏳ préparation de la voix…');
+    try{
+      const mod=await import('https://esm.sh/@diffusionstudio/vits-web@1.0.3');
+      this.piper=mod;
+      if(typeof mod.download==='function'){
+        await mod.download(this.voiceId,(p)=>{ if(p&&p.total) this.status('⏳ voix '+Math.round(p.loaded/p.total*100)+'%'); });
+      }
+      this.ready=true; this.status('✓ voix naturelle');
+    }catch(e){ console.warn('Voix Piper indisponible — repli navigateur.',e); this.failed=true; this.status('voix du navigateur (repli)'); }
+    this.loading=false; return this.ready;
+  },
+  async speakNatural(phon){ const wav=await this.piper.predict({text:phon, voiceId:this.voiceId}); await playBlob(wav); }
+};
+
+function playBlob(blob){
+  return new Promise(res=>{
+    let done=false; const fin=()=>{ if(done)return; done=true; clearTimeout(wd); try{URL.revokeObjectURL(url);}catch(e){} res(); };
+    let url;
+    const wd=setTimeout(fin, 20000); // garde-fou
+    try{
+      url=URL.createObjectURL(blob);
+      const a=new Audio(url);
+      a.playbackRate = curDiff===1?0.97 : curDiff===3?1.06 : 1.0;
+      a.onended=fin; a.onerror=fin;
+      a.play().catch(fin);
+    }catch(e){ fin(); }
+  });
+}
+function speakBrowser(phon){
+  return new Promise(res=>{
+    if(!('speechSynthesis' in window)){ res(); return; }
+    try{ speechSynthesis.cancel(); }catch(e){}
+    const u=new SpeechSynthesisUtterance(phon);
+    u.lang='fr-FR';
+    const _sv=document.getElementById('selVoice'), _vn=_sv?_sv.value:'';
+    const _chosen=(_vn && _vn!=='natural' && _vn!=='browser') ? speechSynthesis.getVoices().find(x=>x.name===_vn) : null;
+    if(_chosen) u.voice=_chosen; else if(VOICE) u.voice=VOICE;
+    const d=curDiff; u.rate=d===1?0.92:d===3?1.08:1.0; u.pitch=1.0; u.volume=1;
+    let done=false; const fin=()=>{ if(done)return; done=true; clearTimeout(wd); res(); };
+    u.onend=fin; u.onerror=fin;
+    // garde-fou : si onend ne se déclenche pas (onglet en arrière-plan, voix absente…), on continue quand même
+    const est=Math.min(22000, 1400 + phon.length*85);
+    const wd=setTimeout(fin, est);
+    setTimeout(()=>{ try{ speechSynthesis.speak(u); }catch(e){ fin(); } }, 60);
+  });
+}
+async function speak(text){
+  const phon=speechify(text);
+  sfx.click();
+  if(Voice.mode()==='natural'){
+    if(Voice.ready){
+      try{ await Voice.speakNatural(phon); sfx.squelch(); return; }
+      catch(e){ console.warn('Synthèse Piper échouée — repli.',e); }
+    } else if(!Voice.failed){
+      Voice.init(); // prépare la voix en tâche de fond, sans bloquer cette transmission
+    }
+  }
+  await speakBrowser(phon);
+  sfx.squelch();
+}
+
+/* sélecteur de voix */
+(function(){ const sv=document.getElementById('selVoice'); if(!sv)return;
+  sv.onchange=function(){
+    voiceUserChose=true;
+    if(this.value==='natural'){ Voice.status('voix offline — préparation (expérimentale)'); Voice.init(); }
+    else { Voice.status(''); }
+  };
+})();
+// La voix « Naturelle » (Piper) ne fonctionne pas partout (ex. Safari : « fs.readFile is not implemented »).
+// On neutralise proprement son erreur et on garde la voix du système.
+window.addEventListener('unhandledrejection', e=>{
+  const m=String((e && e.reason && (e.reason.message||e.reason))||'');
+  if(/vits|piper|unenv|fs\.readFile|readFile|onnx/i.test(m)){
+    try{ e.preventDefault(); }catch(_){}
+    Voice.failed=true; Voice.loading=false;
+    Voice.status('voix offline indisponible ici → voix du système');
+    console.warn('Voix offline (Piper) indisponible dans ce navigateur — repli sur la voix du système.');
+  }
+});
+
+/* ============================================================
+   2. RECONNAISSANCE VOCALE — le pilote répond au micro
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const isSafari = /apple/i.test(navigator.vendor||'') && /safari/i.test(navigator.userAgent) && !/chrome|crios|chromium|edg|fxios/i.test(navigator.userAgent);
+let rec=null, recActive=false, finalTranscript='', finalAlts='', lastAlts='', silenceTimer=null, maxTimer=null, inputDone=false;
+if(SR){
+  // Safari : reconnaissance mono-coup (continuous ignoré) et 1 seule hypothèse ; Chrome : continu + hypothèses multiples
+  rec=new SR(); rec.lang='fr-FR'; rec.interimResults=true; rec.continuous=!isSafari; rec.maxAlternatives=isSafari?1:6;
+}
+
+/* Normalise la parole du pilote pour l'évaluation :
+   minuscules, sans accents, mots-nombres → chiffres, suites de chiffres accolées. */
+const NUMW={zero:'0',un:'1',une:'1',deux:'2',trois:'3',quatre:'4',cinq:'5',six:'6',sept:'7',huit:'8',neuf:'9',dix:'10'};
+function normalize(t){
+  let s=t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  s=s.replace(/[.,;:!?()]/g,' ').replace(/-/g,' ');
+  s=s.split(/\s+/).map(w=>NUMW[w]!==undefined?NUMW[w]:w).join(' ');
+  s=s.replace(/(\d)\s+(?=\d)/g,'$1'); // "4 2 3 1" -> "4231"
+  return s.replace(/\s+/g,' ').trim();
+}
+
+/* ============================================================
+   3. SCÉNARIOS  (who:'atc' = le contrôle parle ; who:'pilot' = à vous)
+   ============================================================ */
+const SCN=[
+/* ---------- SIV ---------- */
+{
+  id:'siv1', air:'SIV', load:2, title:'Suivi de vol & transit — Bordeaux Info',
+  station:'Bordeaux Info', freq:'123.750',
+  briefing:'Vous êtes en croisière VFR, un Tecnam P2008, à 3500 pieds au sud-est de Bordeaux, en route vers Bergerac. Vous demandez un suivi de vol au SIV.',
+  turns:[
+    {who:'pilot',prompt:'Effectuez le contact initial (organisme + indicatif + bonjour).',
+     hint:'« Bordeaux Info, Foxtrot-Hôtel Uniform Écho Tango, bonjour. »',
+     expect:[{l:'Organisme',p:[/bordeaux/]},{l:'Indicatif',p:[/tango/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Bordeaux Info, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Passez votre message : type, position, altitude, intentions.',
+     hint:'« F-ET, Tecnam P2008, à 15 nautiques au sud-est de Bordeaux, 3500 pieds, en route vers Bergerac, demande suivi de vol. »',
+     expect:[{l:'Indicatif',p:[/tango/]},{l:'Position',p:[/nautique|sud|nord|est|ouest|vertical/]},{l:'Altitude',p:[/pied|mille|3500|niveau/]},{l:'Intentions',p:[/suivi|transit|route|vers|destination/]}]},
+    {who:'atc',text:'F-ET, affichez 4231 au transpondeur, QNH 1015.'},
+    {who:'pilot',prompt:'Collationnez le transpondeur et le QNH.',
+     hint:'« 4231 au transpondeur, QNH 1015, F-ET. »',
+     expect:[{l:'Transpondeur 4231',p:[/4231/]},{l:'QNH 1015',p:[/1015/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, identifié, radar contact. Rappelez à la verticale de Marmande, restez en dehors des espaces contrôlés.'},
+    {who:'pilot',prompt:'Accusez réception (rappel verticale Marmande).',
+     hint:'« Rappellerai verticale Marmande, F-ET. »',
+     expect:[{l:'Rappel',p:[/rappel|verticale|marmande/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vous quittez ma zone de couverture, transpondeur 7000, fréquence à votre discrétion, bon vol.'},
+    {who:'pilot',prompt:'Quittez la fréquence (transpondeur 7000).',
+     hint:'« Transpondeur 7000, au revoir, F-ET. »',
+     expect:[{l:'Transpondeur 7000',p:[/7000/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- ZONE ---------- */
+{
+  id:'zone1', air:'ZONE', load:2, title:'Pénétration de zone R — Aix Info',
+  station:'Aix Info', freq:'124.200',
+  briefing:'Votre route passe par la zone réglementée R-96. Vous contactez l’organisme pour demander la pénétration. Vous êtes à 2500 pieds, cap au 090.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Aix Info, Foxtrot-Hôtel Uniform Écho Tango, bonjour. »',
+     expect:[{l:'Organisme',p:[/aix/]},{l:'Indicatif',p:[/tango/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Aix Info, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Position, altitude, et demande de pénétration de la zone R-96.',
+     hint:'« F-ET, à l’ouest de la R-96, 2500 pieds, demande pénétration de la zone R-96. »',
+     expect:[{l:'Indicatif',p:[/tango/]},{l:'Position/altitude',p:[/pied|mille|2500|ouest|nautique|vertical/]},{l:'Demande pénétration',p:[/penetr|zone|96|traver/]}]},
+    {who:'atc',text:'F-ET, affichez 4650 au transpondeur, QNH 1016, rappelez à la limite de la zone.'},
+    {who:'pilot',prompt:'Collationnez.',
+     hint:'« 4650 au transpondeur, QNH 1016, rappellerai à la limite, F-ET. »',
+     expect:[{l:'Transpondeur 4650',p:[/4650/]},{l:'QNH 1016',p:[/1016/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, pénétration de la R-96 approuvée, maximum deux mille pieds, maintenez VMC, rappelez sortie de zone.'},
+    {who:'pilot',prompt:'Collationnez l’autorisation (limite d’altitude).',
+     hint:'« Pénétration R-96 approuvée, maximum 2000 pieds, rappellerai sortie de zone, F-ET. »',
+     expect:[{l:'Approuvée',p:[/approuv|penetr|autoris/]},{l:'Max 2000 pieds',p:[/2000|deux mille|maximum/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, sortie de zone identifiée, transpondeur 7000, bon vol.'},
+    {who:'pilot',prompt:'Quittez.',
+     hint:'« Transpondeur 7000, merci, au revoir, F-ET. »',
+     expect:[{l:'Transpondeur 7000',p:[/7000/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CTR / TWR — arrivée ---------- */
+{
+  id:'ctr1', air:'CTR', load:3, title:'Arrivée & atterrissage — Cannes Tour (CTR)',
+  station:'Cannes Tour', freq:'120.400',
+  briefing:'Vous arrivez sur Cannes-Mandelieu, dans la CTR. Vous vous présentez au point Whisky pour une intégration en vent arrière piste 17. Trafic soutenu.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial avec la tour.',
+     hint:'« Cannes Tour, Foxtrot-Hôtel Uniform Écho Tango, bonjour. »',
+     expect:[{l:'Organisme',p:[/cannes/]},{l:'Indicatif',p:[/tango/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Cannes Tour, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, intentions (pour atterrissage).',
+     hint:'« F-ET, Tecnam P2008, au point Whisky, 1500 pieds, pour l’atterrissage. »',
+     expect:[{l:'Indicatif',p:[/tango/]},{l:'Position',p:[/whisky|point|nord|sud|est|ouest|nautique/]},{l:'Intention',p:[/atterr|integr|arriv|pour le/]}]},
+    {who:'atc',text:'F-ET, QNH 1013, transpondeur 4677, rappelez au point Whisky pour une intégration en vent arrière main droite piste 17.'},
+    {who:'pilot',prompt:'Collationnez (QNH, transpondeur, piste).',
+     hint:'« QNH 1013, 4677, rappellerai Whisky, vent arrière piste 17, F-ET. »',
+     expect:[{l:'QNH 1013',p:[/1013/]},{l:'Transpondeur 4677',p:[/4677/]},{l:'Piste 17',p:[/17/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'Air Corse 214, autorisé décollage piste 17, vent 160 degrés huit noeuds.'}, /* trafic parasite */
+    {who:'atc',text:'F-ET, rappelez en vent arrière, numéro 2 derrière un Cessna en finale.'},
+    {who:'pilot',prompt:'Accusez réception (numéro 2, rappel vent arrière).',
+     hint:'« Numéro 2, rappellerai vent arrière piste 17, F-ET. »',
+     expect:[{l:'Numéro 2',p:[/numero 2|numero2|derriere|2/]},{l:'Rappel',p:[/rappel|vent arriere|finale/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vent 150 degrés six noeuds, autorisé atterrissage piste 17.'},
+    {who:'pilot',prompt:'Collationnez l’autorisation d’atterrissage.',
+     hint:'« Autorisé atterrissage piste 17, F-ET. »',
+     expect:[{l:'Autorisé atterrissage',p:[/autoris|atterr/]},{l:'Piste 17',p:[/17/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, dégagez à droite, contactez le sol 121.8, bonne journée.'},
+    {who:'pilot',prompt:'Collationnez le dégagement / la fréquence sol.',
+     hint:'« Dégage à droite, sol 121.8, F-ET. »',
+     expect:[{l:'Sol / dégagé',p:[/sol|degag|121/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CTR / TWR — départ ---------- */
+{
+  id:'ctr2', air:'CTR', load:2, title:'Départ — Lyon-Bron Sol puis Tour',
+  station:'Bron Sol', freq:'121.700',
+  briefing:'Vous êtes au parking à Lyon-Bron, prêt pour un vol VFR vers Grenoble. Vous demandez le roulage au Sol, puis la tour pour le décollage.',
+  turns:[
+    {who:'pilot',prompt:'Appel au Sol : indicatif, position parking, demande de roulage, destination.',
+     hint:'« Bron Sol, F-HUET, au parking, demande le roulage pour un vol VFR vers Grenoble. »',
+     expect:[{l:'Organisme',p:[/bron|sol/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Demande roulage',p:[/roulage|rouler|depart|parking/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Bron Sol, bonjour, QNH 1018, transpondeur 4321, roulez point d’arrêt piste 34 via Charlie, rappelez prêt.'},
+    {who:'pilot',prompt:'Collationnez (QNH, transpondeur, itinéraire, piste).',
+     hint:'« QNH 1018, 4321, roule point d’arrêt piste 34 via Charlie, F-ET. »',
+     expect:[{l:'QNH 1018',p:[/1018/]},{l:'Transpondeur 4321',p:[/4321/]},{l:'Point d’arrêt piste 34',p:[/34|point d arret|charlie/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, contactez la tour 118.9, au revoir.'},
+    {who:'pilot',prompt:'Collationnez la fréquence tour.',
+     hint:'« Tour 118.9, F-ET. »',
+     expect:[{l:'Fréquence 118.9',p:[/118|tour|9/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, Bron Tour, bonjour, rappelez prêt au départ piste 34.'},
+    {who:'pilot',prompt:'Annoncez prêt au départ.',
+     hint:'« Prêt au départ piste 34, F-ET. »',
+     expect:[{l:'Prêt au départ',p:[/pret|depart/]},{l:'Piste 34',p:[/34/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vent 350 degrés dix noeuds, autorisé décollage piste 34.'},
+    {who:'pilot',prompt:'Collationnez l’autorisation de décollage.',
+     hint:'« Autorisé décollage piste 34, F-ET. »',
+     expect:[{l:'Autorisé décollage',p:[/autoris|decoll/]},{l:'Piste 34',p:[/34/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, rappelez à la verticale du terrain, montez à votre discrétion.'},
+    {who:'pilot',prompt:'Accusez réception.',
+     hint:'« Rappellerai verticale terrain, F-ET. »',
+     expect:[{l:'Rappel',p:[/rappel|verticale|terrain/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- TMA ---------- */
+{
+  id:'tma1', air:'TMA', load:3, title:'Transit de TMA — Marseille Approche',
+  station:'Marseille Approche', freq:'119.750',
+  briefing:'Vous souhaitez traverser la TMA de Marseille. Vous êtes à 2500 pieds, en provenance de l’ouest, vers l’étang de Berre. Espace chargé.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Marseille Approche, Foxtrot-Hôtel Uniform Écho Tango, bonjour. »',
+     expect:[{l:'Organisme',p:[/marseille/]},{l:'Indicatif',p:[/tango/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Marseille Approche, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, demande de transit.',
+     hint:'« F-ET, Tecnam P2008, à l’ouest de l’étang de Berre, 2500 pieds, demande transit de la TMA. »',
+     expect:[{l:'Indicatif',p:[/tango/]},{l:'Position/altitude',p:[/ouest|est|nord|sud|pied|mille|2500|nautique|berre/]},{l:'Demande transit',p:[/transit|traver|tma/]}]},
+    {who:'atc',text:'F-ET, affichez 4655 au transpondeur, QNH 1016, restez en dehors de la TMA, rappelez prêt.'},
+    {who:'pilot',prompt:'Collationnez.',
+     hint:'« 4655 au transpondeur, QNH 1016, F-ET. »',
+     expect:[{l:'Transpondeur 4655',p:[/4655/]},{l:'QNH 1016',p:[/1016/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'Speedbird 812, descendez niveau 70, QNH 1016.'}, /* trafic parasite */
+    {who:'atc',text:'F-ET, autorisé transit de la TMA Marseille, maintenez deux mille cinq cents pieds, rappelez verticale étang de Berre.'},
+    {who:'pilot',prompt:'Collationnez l’autorisation de transit et le maintien d’altitude.',
+     hint:'« Autorisé transit TMA, maintiens 2500 pieds, rappellerai verticale Berre, F-ET. »',
+     expect:[{l:'Autorisé transit',p:[/autoris|transit/]},{l:'Maintien 2500 pieds',p:[/2500|maint|deux mille cinq/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vous quittez la TMA, transpondeur 7000, fréquence à votre discrétion, bon vol.'},
+    {who:'pilot',prompt:'Quittez.',
+     hint:'« Transpondeur 7000, au revoir, F-ET. »',
+     expect:[{l:'Transpondeur 7000',p:[/7000/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- AFIS ---------- */
+{
+  id:'afis1', air:'AFIS', load:1, title:'Arrivée aérodrome AFIS — Le Castellet',
+  station:'Le Castellet AFIS', freq:'118.150',
+  briefing:'Vous arrivez sur Le Castellet, aérodrome AFIS. L’agent AFIS délivre des INFORMATIONS (pas de clairance) : c’est vous, commandant de bord, qui décidez.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Le Castellet Information, Foxtrot-Hôtel Uniform Écho Tango, bonjour. »',
+     expect:[{l:'Organisme',p:[/castellet|information|afis/]},{l:'Indicatif',p:[/tango/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Le Castellet Information, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, intentions.',
+     hint:'« F-ET, Tecnam P2008, à 8 nautiques au nord, 2000 pieds, pour l’atterrissage. »',
+     expect:[{l:'Indicatif',p:[/tango/]},{l:'Position',p:[/nord|sud|est|ouest|nautique|vertical/]},{l:'Intention',p:[/atterr|integr|arriv|pour le/]}]},
+    {who:'atc',text:'F-ET, piste 13 en service, vent 140 degrés cinq noeuds, QNH 1014, un trafic ULM en vent arrière piste 13, rappelez en vent arrière.'},
+    {who:'pilot',prompt:'Accusez réception (piste, QNH, trafic reçu).',
+     hint:'« Piste 13, QNH 1014, trafic en vue / reçu, rappellerai vent arrière, F-ET. »',
+     expect:[{l:'Piste 13',p:[/13/]},{l:'QNH 1014',p:[/1014/]},{l:'Trafic reçu',p:[/recu|copie|trafic|vue|vent arriere/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, reçu, rappelez en finale, à votre discrétion.'},
+    {who:'pilot',prompt:'Accusez réception (rappel en finale).',
+     hint:'« Rappellerai en finale piste 13, F-ET. »',
+     expect:[{l:'Rappel finale',p:[/rappel|finale/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- AUTO-INFO ---------- */
+{
+  id:'auto1', air:'AUTO', load:1, title:'Aérodrome non contrôlé — Auto-information (Muret)',
+  station:'Muret Auto-information', freq:'123.500',
+  briefing:'Muret n’a ni tour ni AFIS : c’est de l’AUTO-INFORMATION. Personne ne vous répond ; vous vous annoncez à l’aveugle. On termine chaque message par le nom du terrain. Piste en service : 30.',
+  turns:[
+    {who:'pilot',prompt:'Annonce d’arrivée : indicatif, type, position, intentions, terrain.',
+     hint:'« Muret, F-HUET, Tecnam P2008, verticale terrain, intégration vent arrière main gauche piste 30, Muret. »',
+     expect:[{l:'Terrain (début)',p:[/muret/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Position/intention',p:[/vertical|vent arriere|integr|nord|sud|est|ouest/]},{l:'Piste 30',p:[/30/]}]},
+    {who:'atc',text:'Muret, Foxtrot Bravo Delta, en finale piste 30, Muret.'}, /* autre trafic */
+    {who:'pilot',prompt:'Annoncez votre vent arrière (numéro 2 derrière le trafic en finale).',
+     hint:'« Muret, F-HUET, vent arrière piste 30, numéro 2, Muret. »',
+     expect:[{l:'Terrain',p:[/muret/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Vent arrière',p:[/vent arriere/]},{l:'Piste 30',p:[/30/]}]},
+    {who:'pilot',prompt:'Annoncez votre finale.',
+     hint:'« Muret, F-HUET, finale piste 30, Muret. »',
+     expect:[{l:'Terrain',p:[/muret/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Finale',p:[/finale/]},{l:'Piste 30',p:[/30/]}]},
+    {who:'pilot',prompt:'Annoncez la piste dégagée.',
+     hint:'« Muret, F-HUET, piste dégagée, Muret. »',
+     expect:[{l:'Terrain',p:[/muret/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Dégagé',p:[/degag|liber/]}]},
+  ]
+},
+/* ---------- TRANSIT VFR SPÉCIAL en CTR (météo dégradée) ---------- */
+{
+  id:'ctr-vfrspecial', air:'CTR', load:3, title:'Transit VFR Spécial en CTR (météo dégradée)',
+  station:'Tours Tour', freq:'120.500',
+  briefing:'Conditions inférieures à la VMC dans la CTR : la traversée ne peut se faire qu’en VFR Spécial, sur clairance et en restant à vue du sol. Vous demandez le transit à basse altitude. (Points de report : exemples.)',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Tours Tour, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/tours|tour/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Tours Tour, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Position, altitude, demande de transit VFR Spécial.',
+     hint:'« F-ET, au point November, 1500 pieds, demande transit VFR Spécial. »',
+     expect:[{l:'Indicatif',p:[/tango|fet/]},{l:'Position/altitude',p:[/november|point|1500|mille|pied|vertical|nord|sud|est|ouest/]},{l:'Transit VFR Spécial',p:[/special|transit/]}]},
+    {who:'atc',text:'F-ET, transpondeur 4321, QNH 1013, autorisé transit VFR Spécial, verticale aérodrome, mille cinq cents pieds maximum, rappelez verticale.'},
+    {who:'pilot',prompt:'Collationnez l’autorisation de transit VFR Spécial.',
+     hint:'« Autorisé transit VFR Spécial, verticale aérodrome, 1500 pieds, transpondeur 4321, F-ET. »',
+     expect:[{l:'Autorisé VFR Spécial',p:[/special|autoris|transit/]},{l:'1500 pieds',p:[/1500|mille.?5|mille cinq/]},{l:'Transpondeur 4321',p:[/4321/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, rappelez quittant la CTR.'},
+    {who:'pilot',prompt:'Accusez réception.',
+     hint:'« Rappellerai quittant la CTR, F-ET. »',
+     expect:[{l:'Rappel sortie CTR',p:[/rappel|quitt|ctr|sortie/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CHARTRES (base LFOR) — AFIS départ ---------- */
+{
+  id:'lfor-dep', air:'AFIS', load:1, title:'Base LFOR — Départ Chartres (AFIS)',
+  station:'Chartres Information', freq:'118.375',
+  briefing:'Base : Chartres (LFOR), aérodrome AFIS. L’agent délivre des INFORMATIONS, pas de clairance : commandant de bord, vous décidez. Piste en service : 28. Vol VFR vers l’ouest.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Chartres Information, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/chartres|information/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Chartres Information, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position (parking), demande des paramètres pour le départ.',
+     hint:'« F-ET, Tecnam P2008, au parking, demande les paramètres pour un départ vers l’ouest. »',
+     expect:[{l:'Indicatif',p:[/tango|fet|huet/]},{l:'Position parking',p:[/parking|hangar|aire/]},{l:'Demande départ',p:[/parametre|depart|roul|informat/]}]},
+    {who:'atc',text:'F-ET, piste 28 en service, vent 260 degrés huit noeuds, QNH 1019, pas de trafic connu, rappelez prêt à rouler.'},
+    {who:'pilot',prompt:'Collationnez (piste, QNH).',
+     hint:'« Piste 28, QNH 1019, F-ET. »',
+     expect:[{l:'Piste 28',p:[/28/]},{l:'QNH 1019',p:[/1019/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, reçu.'},
+    {who:'pilot',prompt:'Annoncez votre roulage au point d’arrêt.',
+     hint:'« F-ET, je roule au point d’arrêt piste 28. »',
+     expect:[{l:'Roulage',p:[/roul|point d arret|arret/]},{l:'Piste 28',p:[/28/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, reçu, rappelez en montée initiale.'},
+    {who:'pilot',prompt:'Annoncez alignement et décollage (décision commandant de bord).',
+     hint:'« Chartres, F-ET, aligne et décolle piste 28. »',
+     expect:[{l:'Alignement/décollage',p:[/aligne|decoll/]},{l:'Piste 28',p:[/28/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CHARTRES — AFIS arrivée ---------- */
+{
+  id:'lfor-arr', air:'AFIS', load:2, title:'Base LFOR — Retour & intégration Chartres (AFIS)',
+  station:'Chartres Information', freq:'118.375',
+  briefing:'Retour de navigation vers votre base de Chartres (LFOR), AFIS. Vous arrivez du sud à 2000 pieds pour une intégration piste 28.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Chartres Information, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/chartres|information/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Chartres Information, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, intentions.',
+     hint:'« F-ET, Tecnam P2008, à 10 nautiques au sud, 2000 pieds, pour l’atterrissage. »',
+     expect:[{l:'Indicatif',p:[/tango|fet/]},{l:'Position',p:[/sud|nord|est|ouest|nautique|vertical/]},{l:'Intention',p:[/atterr|integr|arriv|pour le/]}]},
+    {who:'atc',text:'F-ET, piste 28 en service, vent 270 degrés dix noeuds, QNH 1019, un DR400 en vent arrière, rappelez en vent arrière piste 28.'},
+    {who:'pilot',prompt:'Accusez réception (piste, QNH, trafic).',
+     hint:'« Piste 28, QNH 1019, trafic reçu, rappellerai vent arrière, F-ET. »',
+     expect:[{l:'Piste 28',p:[/28/]},{l:'QNH 1019',p:[/1019/]},{l:'Trafic reçu',p:[/recu|copie|trafic|vue|vent arriere/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, reçu, rappelez en finale, à votre discrétion.'},
+    {who:'pilot',prompt:'Annoncez votre finale.',
+     hint:'« F-ET, finale piste 28. »',
+     expect:[{l:'Finale',p:[/finale/]},{l:'Piste 28',p:[/28/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- PANNE RADIO 7600 ---------- */
+{
+  id:'urg-radio', air:'URG', load:2, title:'Panne radio — retour Chartres sans radio (7600)',
+  station:'Chartres Information', freq:'118.375',
+  briefing:'En vol local, plus aucune réception ni réponse : panne radio probable. Vérifiez volume / fréquence / casque, affichez 7600, restez TRÈS vigilant visuellement, surveillez les signaux lumineux et rejoignez Chartres en émettant à l’aveugle. Piste 28.',
+  turns:[
+    {who:'pilot',prompt:'Faites un essai radio.',
+     hint:'« Chartres Information, F-HUET, essai radio, comment me recevez-vous ? »',
+     expect:[{l:'Organisme',p:[/chartres|information/]},{l:'Essai radio',p:[/essai|radio|recevez|controle/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'silence'},
+    {who:'pilot',prompt:'Aucune réponse : annoncez la panne radio et l’affichage 7600.',
+     hint:'« F-HUET, sans réponse, panne radio, j’affiche 7600. »',
+     expect:[{l:'Panne radio',p:[/panne|sans radio|sans reponse|radio/]},{l:'Transpondeur 7600',p:[/7600/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'pilot',prompt:'Annonce à l’aveugle : intention de rejoindre et d’intégrer (sans radio, 7600).',
+     hint:'« Chartres, F-HUET, sans radio, transpondeur 7600, je rejoins la vent arrière piste 28 pour atterrissage, Chartres. »',
+     expect:[{l:'Sans radio / 7600',p:[/sans radio|7600/]},{l:'Intégration piste 28',p:[/vent arriere|integr|28/]},{l:'Terrain',p:[/chartres/]}]},
+    {who:'pilot',prompt:'Annonce à l’aveugle en finale.',
+     hint:'« Chartres, F-HUET, sans radio, finale piste 28, atterrissage, Chartres. »',
+     expect:[{l:'Finale',p:[/finale/]},{l:'Piste 28',p:[/28/]},{l:'Terrain',p:[/chartres/]}]},
+  ]
+},
+/* ---------- PANNE MOTEUR — MAYDAY 7700 ---------- */
+{
+  id:'urg-moteur', air:'URG', load:3, title:'Panne moteur — MAYDAY (7700)',
+  station:'Seine Info', freq:'120.900',
+  briefing:'Croisière 3500 pieds au sud de Chartres : perte totale de puissance moteur. Priorité au pilotage (aviate), puis la radio. Déclarez la DÉTRESSE, affichez 7700. Structure officielle (Manuel de phraséologie CAG) : « MAYDAY ×3, organisme, indicatif, nature de la détresse, intentions, position / niveau / cap ».',
+  turns:[
+    {who:'pilot',prompt:'Déclarez la détresse (message MAYDAY complet : nature, intentions, position/niveau/cap).',
+     hint:'« MAYDAY, MAYDAY, MAYDAY, Seine Info, F-HUET, panne moteur totale, atterrissage forcé en campagne, verticale sud de Chartres, 3500 pieds, cap 180. »',
+     expect:[{l:'MAYDAY',p:[/mayday|detresse/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Nature (panne moteur)',p:[/moteur|panne/]},{l:'Intentions',p:[/atterr|forc|campagne|champ|poser/]},{l:'Position / niveau / cap',p:[/chartres|sud|nord|est|ouest|pied|mille|3500|vertical|cap|180/]}]},
+    {who:'atc',text:'F-HUET, Seine Info, Mayday Roger, transpondeur 7700, QNH 1015, combien de personnes à bord et confirmez vos intentions ?'},
+    {who:'pilot',prompt:'Collationnez 7700, personnes à bord et intentions.',
+     hint:'« Transpondeur 7700, 2 personnes à bord, atterrissage forcé en campagne, F-HUET. »',
+     expect:[{l:'Transpondeur 7700',p:[/7700/]},{l:'Personnes à bord',p:[/personne|bord|pob|2/]},{l:'Intentions',p:[/atterr|forc|campagne|champ/]}]},
+    {who:'atc',text:'F-HUET, reçu, les secours sont alertés, vous êtes prioritaire, rappelez si possible avant l’atterrissage, bonne chance.'},
+    {who:'pilot',prompt:'Accusez réception.',
+     hint:'« Reçu, F-HUET. »',
+     expect:[{l:'Reçu',p:[/recu|copie|bien recu/]},{l:'Indicatif',p:[/tango|huet/]}]},
+  ]
+},
+/* ---------- MALAISE À BORD — PAN PAN ---------- */
+{
+  id:'urg-panpan', air:'URG', load:2, title:'Malaise à bord — PAN PAN, priorité',
+  station:'Seine Info', freq:'120.900',
+  briefing:'Un passager fait un malaise à bord. Situation d’URGENCE (pas de détresse) : utilisez PAN PAN. Demandez la priorité pour un atterrissage rapide à Chartres et l’assistance médicale.',
+  turns:[
+    {who:'pilot',prompt:'Déclarez l’urgence (PAN PAN).',
+     hint:'« PAN PAN, PAN PAN, PAN PAN, Seine Info, F-HUET, un passager en malaise, demande priorité pour un atterrissage à Chartres. »',
+     expect:[{l:'PAN PAN',p:[/pan pan|panpan|urgence/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Nature (malaise)',p:[/malaise|passager|medical|malade|sante/]},{l:'Demande priorité',p:[/priorit|atterr|chartres|rapide/]}]},
+    {who:'atc',text:'F-HUET, Seine Info, Pan Pan Roger, priorité accordée, affichez 4655, QNH 1017, souhaitez-vous les secours médicaux à l’arrivée ?'},
+    {who:'pilot',prompt:'Collationnez et demandez les secours médicaux.',
+     hint:'« 4655, QNH 1017, oui secours médicaux demandés, F-HUET. »',
+     expect:[{l:'Transpondeur 4655',p:[/4655/]},{l:'QNH 1017',p:[/1017/]},{l:'Secours médicaux',p:[/secours|medic|ambulance|oui/]}]},
+    {who:'atc',text:'F-HUET, reçu, secours médicaux prévenus, contactez Chartres Information 118.375, bonne chance.'},
+    {who:'pilot',prompt:'Collationnez le transfert vers Chartres.',
+     hint:'« Chartres Information 118.375, F-HUET. »',
+     expect:[{l:'Chartres / 118.375',p:[/chartres|118|information/]},{l:'Indicatif',p:[/tango|huet/]}]},
+  ]
+},
+/* ---------- DÉROUTEMENT MÉTÉO — PAN PAN ---------- */
+{
+  id:'der-meteo', air:'DER', load:2, title:'Déroutement météo — dégradation VMC',
+  station:'Seine Info', freq:'120.900',
+  briefing:'En navigation, la météo se dégrade (plafond bas, visibilité en baisse). Décision : demi-tour et déroutement vers Chartres tant que vous êtes en VMC. Signalez-le au SIV ; une urgence (PAN PAN) est justifiée si les conditions VMC deviennent critiques.',
+  turns:[
+    {who:'pilot',prompt:'Signalez la situation et votre déroutement.',
+     hint:'« PAN PAN ×3, Seine Info, F-HUET, conditions météo dégradées, demi-tour, je me déroute vers Chartres, demande assistance. »',
+     expect:[{l:'PAN PAN / difficulté',p:[/pan pan|panpan|difficult|urgence/]},{l:'Indicatif',p:[/tango|huet/]},{l:'Météo dégradée',p:[/meteo|degrad|plafond|visibilit|nuage|vmc/]},{l:'Déroutement Chartres',p:[/deroute|demi tour|chartres|retour/]}]},
+    {who:'atc',text:'F-HUET, Seine Info, Pan Pan Roger, maintenez VMC, affichez 4677, QNH Chartres 1018, annoncez votre position et votre altitude.'},
+    {who:'pilot',prompt:'Collationnez et donnez position + altitude.',
+     hint:'« 4677, QNH 1018, verticale untel, 2000 pieds, F-HUET. »',
+     expect:[{l:'Transpondeur 4677',p:[/4677/]},{l:'QNH 1018',p:[/1018/]},{l:'Position/altitude',p:[/pied|mille|vertical|nautique|nord|sud|est|ouest|2000/]}]},
+    {who:'atc',text:'F-HUET, radar contact, Chartres à 20 nautiques au nord-ouest, rappelez terrain en vue.'},
+    {who:'pilot',prompt:'Accusez réception (rappel terrain en vue).',
+     hint:'« Rappellerai terrain en vue, F-HUET. »',
+     expect:[{l:'Rappel terrain en vue',p:[/rappel|vue|terrain|chartres/]},{l:'Indicatif',p:[/tango|huet/]}]},
+  ]
+},
+/* ---------- DÉROUTEMENT — destination indisponible ---------- */
+{
+  id:'der-terrain', air:'DER', load:2, title:'Déroutement — destination indisponible',
+  station:'Seine Info', freq:'120.900',
+  briefing:'À l’approche de votre destination, le terrain devient indisponible (piste occupée / hors service). Décision : déroutement vers Chartres. Informez le SIV et demandez routage et paramètres. (Situation gérée, sans urgence déclarée.)',
+  turns:[
+    {who:'pilot',prompt:'Informez de votre déroutement et demandez les paramètres.',
+     hint:'« Seine Info, F-HUET, terrain de destination indisponible, je me déroute vers Chartres, demande les paramètres. »',
+     expect:[{l:'Indicatif',p:[/tango|huet/]},{l:'Déroutement',p:[/deroute|indisponible|change|divert/]},{l:'Vers Chartres',p:[/chartres/]}]},
+    {who:'atc',text:'F-HUET, Seine Info, reçu, affichez 4650, QNH Chartres 1018, Chartres à 15 nautiques dans le 340, rappelez terrain en vue.'},
+    {who:'pilot',prompt:'Collationnez (transpondeur, QNH, rappel terrain en vue).',
+     hint:'« 4650, QNH 1018, rappellerai terrain en vue, F-HUET. »',
+     expect:[{l:'Transpondeur 4650',p:[/4650/]},{l:'QNH 1018',p:[/1018/]},{l:'Rappel terrain en vue',p:[/rappel|vue|terrain/]}]},
+    {who:'atc',text:'F-HUET, contactez Chartres Information 118.375, bon vol.'},
+    {who:'pilot',prompt:'Collationnez le transfert.',
+     hint:'« Chartres Information 118.375, F-HUET. »',
+     expect:[{l:'Chartres / 118.375',p:[/chartres|118|information/]},{l:'Indicatif',p:[/tango|huet/]}]},
+  ]
+},
+/* ---------- CLASSE D — transit CTR (léger) ---------- */
+{
+  id:'cld-ctr-light', air:'CLD', load:1, title:'Transit CTR classe D — Le Havre (léger)',
+  station:'Le Havre Tour', freq:'118.225',
+  briefing:'Petit transit de la CTR du Havre, classée D, par temps calme. En classe D, la pénétration VFR se fait sur clairance et le contrôle vous donne l’information de trafic (mais pas la séparation avec les autres VFR). Vous longez la côte à mille cinq cents pieds.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Le Havre Tour, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/havre|tour/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Le Havre Tour, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, demande de transit de la CTR.',
+     hint:'« F-ET, Tecnam P2008, verticale de la plage, mille cinq cents pieds, demande transit de la CTR. »',
+     expect:[{l:'Indicatif',p:[/tango|fet/]},{l:'Position/altitude',p:[/vertical|cote|plage|nord|sud|est|ouest|nautique|mille|pied/]},{l:'Demande transit',p:[/transit|penetr|traver|ctr/]}]},
+    {who:'atc',text:'F-ET, transpondeur 4655, QNH 1018, autorisé à pénétrer la CTR, maintenez mille cinq cents pieds, pas de trafic connu, rappelez sortie de zone.'},
+    {who:'pilot',prompt:'Collationnez (transpondeur, QNH, autorisation, altitude).',
+     hint:'« 4655, QNH 1018, autorisé pénétrer la CTR, maintiens mille cinq cents pieds, rappellerai sortie, F-ET. »',
+     expect:[{l:'Transpondeur 4655',p:[/4655/]},{l:'QNH 1018',p:[/1018/]},{l:'Autorisé pénétrer',p:[/autoris|penetr|transit/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vous quittez la CTR, transpondeur 7000, bonne route.'},
+    {who:'pilot',prompt:'Quittez (transpondeur 7000).',
+     hint:'« Transpondeur 7000, au revoir, F-ET. »',
+     expect:[{l:'Transpondeur 7000',p:[/7000/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CLASSE D — transit CTR + information de trafic ---------- */
+{
+  id:'cld-ctr', air:'CLD', load:2, title:'Transit CTR classe D — Deauville',
+  station:'Deauville Approche', freq:'126.605',
+  briefing:'Votre route traverse la CTR de Deauville, classée D. Pénétration VFR sur clairance ; le contrôle assure l’information de trafic mais PAS la séparation avec les autres VFR — restez à vue et vigilant. Vous arrivez du sud à deux mille pieds.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Deauville Approche, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/deauville|approche/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Deauville Approche, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, demande de transit de la CTR classe D.',
+     hint:'« F-ET, Tecnam P2008, à 10 nautiques au sud, deux mille pieds, demande transit de la CTR. »',
+     expect:[{l:'Indicatif',p:[/tango|fet/]},{l:'Position/altitude',p:[/sud|nord|est|ouest|nautique|pied|mille|vertical/]},{l:'Demande transit',p:[/transit|penetr|traver|ctr/]}]},
+    {who:'atc',text:'F-ET, transpondeur 4632, QNH 1014, autorisé à pénétrer la CTR de Deauville, maintenez deux mille pieds, rappelez verticale du port.'},
+    {who:'pilot',prompt:'Collationnez (transpondeur, QNH, autorisation, altitude, rappel).',
+     hint:'« 4632 au transpondeur, QNH 1014, autorisé pénétrer la CTR, maintiens deux mille pieds, rappellerai verticale du port, F-ET. »',
+     expect:[{l:'Transpondeur 4632',p:[/4632/]},{l:'QNH 1014',p:[/1014/]},{l:'Autorisé pénétrer',p:[/autoris|penetr|transit/]},{l:'Maintien 2000 pieds',p:[/2000|maint|mille/]}]},
+    {who:'atc',text:'F-ET, information de trafic, un ATR en finale piste 12, dans vos onze heures, deux mille cinq cents pieds en descente.'},
+    {who:'pilot',prompt:'Accusez réception du trafic (en vue, ou négatif contact / je surveille).',
+     hint:'« Trafic en vue, F-ET » ou « négatif contact, je surveille, F-ET ».',
+     expect:[{l:'Trafic reçu',p:[/trafic|vue|contact|surveil|recu|negatif/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vous quittez la CTR, transpondeur 7000, fréquence à votre discrétion, bon vol.'},
+    {who:'pilot',prompt:'Quittez (transpondeur 7000).',
+     hint:'« Transpondeur 7000, au revoir, F-ET. »',
+     expect:[{l:'Transpondeur 7000',p:[/7000/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CLASSE D — traversée TMA (attente clairance + trafic) ---------- */
+{
+  id:'cld-tma', air:'CLD', load:3, title:'Traversée TMA classe D — Tours',
+  station:'Tours Approche', freq:'121.100',
+  briefing:'Vous devez traverser la TMA de Tours, classée D. Tant que la clairance n’est pas donnée, vous devez rester EN DEHORS de la classe D. Espace chargé. Vous approchez par l’est à trois mille pieds.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Tours Approche, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/tours|approche/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Tours Approche, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, demande de traversée de la TMA.',
+     hint:'« F-ET, Tecnam P2008, à l’est de Tours, trois mille pieds, demande traversée de la TMA. »',
+     expect:[{l:'Indicatif',p:[/tango|fet/]},{l:'Position/altitude',p:[/est|ouest|nord|sud|nautique|pied|mille|tours|vertical/]},{l:'Demande traversée',p:[/traver|transit|penetr|tma/]}]},
+    {who:'atc',text:'F-ET, transpondeur 4671, QNH 1016, restez en dehors de la TMA, rappelez à la verticale du point Écho.'},
+    {who:'pilot',prompt:'Collationnez (transpondeur, QNH) et confirmez rester en dehors, rappel point Écho.',
+     hint:'« 4671, QNH 1016, je reste en dehors, rappellerai verticale point Écho, F-ET. »',
+     expect:[{l:'Transpondeur 4671',p:[/4671/]},{l:'QNH 1016',p:[/1016/]},{l:'Reste dehors / rappel',p:[/dehors|exterieur|rappel|echo/]}]},
+    {who:'atc',text:'Air France 1478, autorisé à descendre trois mille pieds, QNH 1016.'},
+    {who:'atc',text:'F-ET, autorisé à traverser la TMA de Tours, maintenez trois mille pieds, information de trafic un jet en montée dans votre secteur, rappelez sortie de TMA.'},
+    {who:'pilot',prompt:'Collationnez l’autorisation de traversée et le maintien d’altitude.',
+     hint:'« Autorisé traverser la TMA, maintiens trois mille pieds, rappellerai sortie de TMA, F-ET. »',
+     expect:[{l:'Autorisé traverser',p:[/autoris|traver|transit/]},{l:'Maintien 3000 pieds',p:[/3000|maint|mille/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vous quittez la TMA, transpondeur 7000, bonne route.'},
+    {who:'pilot',prompt:'Quittez.',
+     hint:'« Transpondeur 7000, merci, au revoir, F-ET. »',
+     expect:[{l:'Transpondeur 7000',p:[/7000/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CLASSE D — arrivée & atterrissage ---------- */
+{
+  id:'cld-arr', air:'CLD', load:3, title:'Arrivée & atterrissage classe D — Le Touquet',
+  station:'Le Touquet Tour', freq:'118.450',
+  briefing:'Vous arrivez pour vous poser au Touquet, dont la CTR est classée D. Il faut une clairance pour pénétrer la classe D, puis intégrer le circuit ; le contrôle vous donne l’information de trafic. Vous vous présentez du sud au point Sierra, deux mille pieds.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Le Touquet Tour, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/touquet|tour/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Le Touquet Tour, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, intentions (pour atterrissage).',
+     hint:'« F-ET, Tecnam P2008, au point Sierra, deux mille pieds, pour l’atterrissage. »',
+     expect:[{l:'Indicatif',p:[/tango|fet/]},{l:'Position',p:[/sierra|point|sud|nord|est|ouest|nautique|vertical/]},{l:'Intention',p:[/atterr|integr|arriv|pour le/]}]},
+    {who:'atc',text:'F-ET, transpondeur 4620, QNH 1015, autorisé à pénétrer la CTR, rappelez verticale du point Sierra pour une intégration en vent arrière main gauche piste 13.'},
+    {who:'pilot',prompt:'Collationnez (transpondeur, QNH, autorisation, piste).',
+     hint:'« 4620, QNH 1015, autorisé pénétrer la CTR, rappellerai Sierra, vent arrière piste 13, F-ET. »',
+     expect:[{l:'Transpondeur 4620',p:[/4620/]},{l:'QNH 1015',p:[/1015/]},{l:'Autorisé pénétrer',p:[/autoris|penetr/]},{l:'Piste 13',p:[/13/]}]},
+    {who:'atc',text:'F-ET, information de trafic, un ULM en vent arrière piste 13, deux mille pieds.'},
+    {who:'pilot',prompt:'Accusez réception du trafic.',
+     hint:'« Trafic en vue, F-ET » ou « négatif contact, je surveille, F-ET ».',
+     expect:[{l:'Trafic reçu',p:[/trafic|vue|contact|surveil|recu|negatif/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, numéro 1, rappelez en finale piste 13.'},
+    {who:'pilot',prompt:'Accusez réception (numéro 1, rappel finale).',
+     hint:'« Numéro 1, rappellerai finale piste 13, F-ET. »',
+     expect:[{l:'Numéro 1 / rappel',p:[/numero|rappel|finale/]},{l:'Piste 13',p:[/13/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vent 130 degrés huit noeuds, autorisé atterrissage piste 13.'},
+    {who:'pilot',prompt:'Collationnez l’autorisation d’atterrissage.',
+     hint:'« Autorisé atterrissage piste 13, F-ET. »',
+     expect:[{l:'Autorisé atterrissage',p:[/autoris|atterr/]},{l:'Piste 13',p:[/13/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, dégagez à droite, contactez le sol 121.750, bonne journée.'},
+    {who:'pilot',prompt:'Collationnez le dégagement / la fréquence sol.',
+     hint:'« Dégage à droite, sol 121.750, F-ET. »',
+     expect:[{l:'Sol / dégagé',p:[/sol|degag|121/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+/* ---------- CLASSE D — transit REFUSÉ (contournement) ---------- */
+{
+  id:'cld-refus', air:'CLD', load:2, title:'Transit classe D refusé — Beauvais',
+  station:'Beauvais Approche', freq:'120.350',
+  briefing:'Vous demandez à traverser la TMA de Beauvais, classée D, mais le trafic commercial est dense. En classe D, sans clairance vous devez rester EN DEHORS et contourner. Objectif : savoir gérer un refus. Vous arrivez du nord à trois mille pieds.',
+  turns:[
+    {who:'pilot',prompt:'Contact initial.',
+     hint:'« Beauvais Approche, F-HUET, bonjour. »',
+     expect:[{l:'Organisme',p:[/beauvais|approche/]},{l:'Indicatif',p:[/tango|huet/]}]},
+    {who:'atc',text:'Foxtrot-Hôtel Uniform Écho Tango, Beauvais Approche, bonjour, passez votre message.'},
+    {who:'pilot',prompt:'Type, position, altitude, demande de traversée de la TMA.',
+     hint:'« F-ET, Tecnam P2008, au nord de Beauvais, trois mille pieds, demande traversée de la TMA. »',
+     expect:[{l:'Indicatif',p:[/tango|fet/]},{l:'Position/altitude',p:[/nord|sud|est|ouest|nautique|pied|mille|beauvais|vertical/]},{l:'Demande traversée',p:[/traver|transit|penetr|tma/]}]},
+    {who:'atc',text:'F-ET, transpondeur 4644, QNH 1013, négatif transit pour l’instant cause trafic commercial, restez en dehors de la classe D, rappelez à la verticale du point November.'},
+    {who:'pilot',prompt:'Accusez le refus : vous restez en dehors, rappel verticale November.',
+     hint:'« Reçu, négatif transit, je reste en dehors, rappellerai verticale November, F-ET. »',
+     expect:[{l:'Refus compris',p:[/negatif|recu|compris|dehors|exterieur/]},{l:'Reste dehors / rappel',p:[/dehors|exterieur|rappel|november/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, transit toujours non disponible, contournez la TMA par l’ouest, maintenez en dehors, rappelez à la verticale du point Whisky en sortie.'},
+    {who:'pilot',prompt:'Collationnez le contournement par l’ouest et le point de sortie.',
+     hint:'« Je contourne par l’ouest, reste en dehors, rappellerai verticale Whisky, F-ET. »',
+     expect:[{l:'Contournement ouest',p:[/contourn|ouest|dehors|exterieur/]},{l:'Rappel Whisky / sortie',p:[/whisky|rappel|sortie/]},{l:'Indicatif',p:[/tango|fet/]}]},
+    {who:'atc',text:'F-ET, vous quittez ma zone, transpondeur 7000, fréquence à votre discrétion, bon vol.'},
+    {who:'pilot',prompt:'Quittez (transpondeur 7000).',
+     hint:'« Transpondeur 7000, merci, au revoir, F-ET. »',
+     expect:[{l:'Transpondeur 7000',p:[/7000/]},{l:'Indicatif',p:[/tango|fet/]}]},
+  ]
+},
+];
+
+/* ============================================================
+   4. ÉTAT & UI
+   ============================================================ */
+const $=id=>document.getElementById(id);
+const selAir=$('selAir'), selScn=$('selScn');
+let diffSel=2; // difficulté choisie (contrôle segmenté)
+let S=null;              // scénario courant
+let idx=0;              // index de tour
+let attempts=0;        // tentatives sur le tour courant
+let itemsGot=0, itemsTot=0; // score global
+let running=false;
+let curDiff=2, curLoad=2;       // difficulté / charge résolues (gère l'aléatoire)
+let sessionQueue=[], sessionTotal=0; // file d'exercices pour le mode session
+
+function compat(){
+  const notes=[];
+  if(location.protocol==='file:') notes.push('⛔ <b>Ouvert en file:// — le micro est bloqué.</b> Lancez <code>node server.js</code> (ou <code>python3 -m http.server 5500</code>) dans le dossier, puis ouvrez <b>http://localhost:5500</b>.');
+  if(!('speechSynthesis' in window)) notes.push('⚠️ Synthèse vocale indisponible sur ce navigateur.');
+  if(!SR) notes.push('⚠️ Reconnaissance vocale indisponible — utilisez <b>Google Chrome</b>. Une saisie clavier de secours s’activera.');
+  else if(isSafari) notes.push('🧭 <b>Safari détecté</b> : son support de la reconnaissance vocale est <b>limité et instable</b>. Pour une expérience fiable, ouvrez l’app dans <b>Google Chrome</b>. En Safari, énoncez votre message d’un trait puis faites une <b>pause de ~2 s</b> ; sinon utilisez la saisie clavier.');
+  else notes.push('🎙️ <b>Micro</b> : au 1<sup>er</sup> « Appuyer pour parler », Chrome demande l’autorisation → cliquez <b>Autoriser</b>. Le voyant passe à « 🎤 MICRO ACTIF ». Bruit de fond faible et casque-micro conseillés.');
+  notes.push('🎧 Conseil : casque recommandé (évite que le micro capte la voix du contrôle). Ouvrez de préférence via <code>http://localhost</code> (voir README) pour autoriser le micro.');
+  notes.push('🔊 <b>Voix</b> : par défaut la meilleure voix française de votre système. Pour un rendu plus naturel, installez une voix « <b>améliorée</b> » (macOS → Réglages Système → Accessibilité → Contenu énoncé → Voix → Français → ✨) : elle apparaîtra dans le menu <b>Voix</b>. (« Naturelle offline » est expérimentale et ne marche pas dans tous les navigateurs.)');
+  notes.push('ℹ️ Fréquences et codes transpondeur sont <b>pédagogiques</b> — vérifiez toujours la carte VAC / l’AIP avant un vol réel.');
+  notes.push('📖 Phraséologie alignée sur le <b>Manuel de phraséologie à l’usage de la CAG</b> (DGAC / ENAC, éd. 15 avril 2023) : structures MAYDAY / PAN PAN, panne radio 7600, transit VFR & VFR Spécial, circuit, AFIS.');
+  $('compatNote').innerHTML=notes.join('<br>');
+}
+compat();
+
+function refreshScnList(){
+  const air=selAir.value;
+  selScn.innerHTML='';
+  const list=SCN.filter(s=>(air==='ALL'||s.air===air));
+  list.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.id;
+    o.textContent=(air==='ALL'?`[${s.air}] `:'')+s.title;
+    selScn.appendChild(o);
+  });
+  showBrief();
+}
+function showBrief(){
+  const s=SCN.find(x=>x.id===selScn.value);
+  $('brief').innerHTML = s ? `<b>${s.station}</b> · ${s.freq} MHz<br>${s.briefing}` : '';
+}
+selAir.onchange=refreshScnList;
+selScn.onchange=showBrief;
+refreshScnList();
+
+// difficulté — contrôle segmenté
+document.querySelectorAll('#segDiff .seg').forEach(b=>{ b.onclick=()=>{
+  document.querySelectorAll('#segDiff .seg').forEach(x=>x.classList.remove('is-on'));
+  b.classList.add('is-on'); diffSel=+b.dataset.v;
+};});
+
+function setAir(c){$('onair').className='onair'+(c?' '+c:'');}
+function badge(t){$('statusBadge').textContent=t;}
+
+/* ---- config résolue (gère l'aléatoire) ---- */
+function resolveConfig(){
+  curDiff = diffSel;
+  curLoad = 2;
+}
+function pool(){
+  const a=selAir.value;
+  const p=SCN.filter(s=>a==='ALL'||s.air===a);
+  return p.length?p:SCN;
+}
+function randomScenario(){ const p=pool(); return p[Math.floor(Math.random()*p.length)]; }
+
+function resetPTT(){
+  $('btnPTT').classList.remove('live');
+  $('btnPTT').textContent='🎙️ APPUYER POUR PARLER';
+  $('btnPTT').onclick=()=>{ if(!SR){ $('typeInput').focus(); return; } recActive?endListen():beginListen(); };
+}
+
+/* ---- démarrage d'un exercice (continuing=true si on enchaîne une session) ---- */
+function startExercise(scn, continuing){
+  S=scn; idx=0; attempts=0; running=true;
+  ac();               // réveille l'audio sur le geste utilisateur
+  if(Voice.mode()==='natural') Voice.init(); // précharge la voix naturelle en tâche de fond
+  resolveConfig();
+  $('configPanel').classList.add('hidden');
+  $('commsPanel').classList.remove('hidden');
+  $('scorePanel').classList.remove('hidden');
+  $('typeFallback').classList.toggle('hidden', !!SR);
+  $('freqLabel').textContent=`${S.station} · ${S.freq} MHz`;
+  $('cfgLabel').textContent=` · niveau ${['','Débutant','Intermédiaire','Confirmé'][curDiff]}`;
+  if(!continuing){ itemsGot=0; itemsTot=0; $('log').innerHTML=''; }
+  threadClear();
+  resetPTT();
+  logLine('ls', `— Contact avec ${S.station} —`);
+  sysMsg(`☎️ ${S.station} · ${S.freq} MHz — niveau ${['','Débutant','Intermédiaire','Confirmé'][curDiff]}`);
+  updateMeters();
+  advance();
+}
+
+/* ---- boutons de lancement ---- */
+$('btnStart').onclick=()=>{
+  const scn=SCN.find(x=>x.id===selScn.value); if(!scn)return;
+  sessionQueue=[]; sessionTotal=0;
+  startExercise(scn,false);
+};
+$('btnRandom').onclick=()=>{
+  // n'importe quel scénario, tous espaces confondus
+  sessionQueue=[]; sessionTotal=0;
+  const scn=SCN[Math.floor(Math.random()*SCN.length)];
+  startExercise(scn,false);
+};
+
+/* ---- fil de discussion (style iMessage) ---- */
+let liveRow=null;
+function threadEl(){ return document.getElementById('thread'); }
+function threadClear(){ threadEl().innerHTML=''; liveRow=null; }
+function threadScroll(){ const t=threadEl(); t.scrollTop=t.scrollHeight; }
+function bubbleRow(side){ const r=document.createElement('div'); r.className='row '+side; threadEl().appendChild(r); return r; }
+function sysMsg(html){ const r=bubbleRow('sys'); r.innerHTML='<div class="sys">'+html+'</div>'; threadScroll(); return r; }
+function atcTyping(name){
+  const r=bubbleRow('atc');
+  r.innerHTML='<div class="tag">'+(name||'')+'</div><div class="bubble typing"><span></span><span></span><span></span></div>';
+  threadScroll(); return r;
+}
+function atcReveal(row,text){ const b=row&&row.querySelector('.bubble'); if(!b)return; b.classList.remove('typing'); b.textContent=text; threadScroll(); }
+function meBubble(text,live){ const r=bubbleRow('me'); const b=document.createElement('div'); b.className='bubble me'+(live?' live':''); b.textContent=text; r.appendChild(b); threadScroll(); return r; }
+function meCaption(row,html){ if(!row)return; const c=document.createElement('div'); c.className='caption'; c.innerHTML=html; row.appendChild(c); threadScroll(); }
+
+/* Le contrôle "parle" : points de frappe pendant la voix, texte révélé ensuite (lisible). */
+async function atcSay(text){
+  const row=atcTyping(S.station);
+  if($('chkSub').checked) atcReveal(row,text);
+  await speak(text);
+  atcReveal(row,text);
+  logLine('la','ATC ▸ '+text);
+}
+
+/* ---- moteur ---- */
+async function advance(){
+  // enchaîne toutes les transmissions du côté contrôle jusqu'au prochain tour pilote
+  while(idx<S.turns.length && S.turns[idx].who!=='pilot'){
+    const t=S.turns[idx];
+    if(t.who==='silence'){
+      badge('…'); setAir(''); sfx.hiss();
+      sysMsg('📡 silence radio — aucune réponse');
+      logLine('ls','(silence radio — aucune réponse)');
+      await wait(2600);
+    } else {
+      badge('ÉCOUTEZ'); setAir('tx'); $('turnLabel').textContent='';
+      await atcSay(t.text);
+      setAir('');
+    }
+    idx++;
+  }
+  if(idx>=S.turns.length){ endOfScenario(); return; }
+  presentPilotTurn();
+}
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function endOfScenario(){
+  if(sessionQueue.length){
+    const scn=sessionQueue.shift();
+    const done=sessionTotal - sessionQueue.length;
+    logLine('ls',`— Exercice ${done}/${sessionTotal} : [${scn.air}] ${scn.title} —`);
+    setTimeout(()=>startExercise(scn,true), 900);
+  } else {
+    finish(false);
+  }
+}
+
+let curTurn=null;
+function presentPilotTurn(){
+  curTurn=S.turns[idx]; attempts=0;
+  badge('À VOUS'); setAir('');
+  $('pilotPrompt').textContent=curTurn.prompt;
+  $('hintBox').style.display='none'; $('hintBox').innerHTML='';
+  $('turnLabel').textContent=`étape ${countPilotIndex()} / ${countPilotTotal()}`;
+  // indice auto en difficulté débutant
+  if(curDiff===1) showHint();
+  updateMeters();
+}
+
+function showHint(){
+  if(curDiff===3){ return; } // pas d'indice en niveau Confirmé
+  $('hintBox').style.display='block';
+  $('hintBox').innerHTML='💡 Exemple de phraséologie :<br>'+curTurn.hint;
+}
+$('btnHint').onclick=showHint;
+$('btnReplay').onclick=async()=>{
+  // rejoue la dernière transmission du contrôle
+  let j=idx-1; while(j>=0 && S.turns[j].who!=='atc') j--;
+  if(j>=0){ setAir('tx'); badge('ÉCOUTEZ'); await speak(S.turns[j].text); setAir(''); badge('À VOUS'); }
+};
+$('btnSkip').onclick=()=>{ logLine('ls','(étape passée)'); itemsTot+=curTurn.expect.length; nextTurn(); };
+$('btnAbort').onclick=()=>finish(true);
+
+/* ---- reconnaissance / évaluation ---- */
+let micReady=false, recErrored=false;
+async function ensureMic(){
+  if(micReady) return true;
+  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){ micReady=true; return true; }
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({audio:true});
+    s.getTracks().forEach(t=>t.stop()); // permission obtenue → on relâche le micro pour la reconnaissance
+    micReady=true; return true;
+  }catch(e){
+    if(liveRow){ liveRow.remove(); liveRow=null; }
+    const n=e&&e.name;
+    const why = (n==='NotAllowedError'||n==='SecurityError') ? 'micro refusé/bloqué'
+              : (n==='NotFoundError'||n==='DevicesNotFoundError') ? 'aucun micro détecté'
+              : ('micro indisponible'+(n?' ('+n+')':''));
+    sysMsg('🎙️ '+why+'. Cliquez sur le cadenas 🔒 dans la barre d’adresse → Micro → Autoriser, et ouvrez via <code>http://localhost</code>. Sinon, tapez votre réponse ci-dessous.');
+    $('typeFallback').classList.remove('hidden'); try{$('typeInput').focus();}catch(_){}
+    return false;
+  }
+}
+
+async function beginListen(){
+  if(!SR || recActive) return;
+  ac();
+  // Safari : démarrer DANS le geste du clic (pas d'await avant rec.start, sinon Safari bloque la reco)
+  if(isSafari){ startRecognition(); return; }
+  if(!(await ensureMic())) return;
+  startRecognition();
+}
+function startRecognition(){
+  sfx.beep();
+  finalTranscript=''; finalAlts=''; lastHeard=''; lastAlts=''; recErrored=false; inputDone=false;
+  try{ rec.start(); }
+  catch(e){
+    try{ rec.stop(); }catch(_){}
+    sysMsg('🎙️ Impossible de démarrer la reconnaissance — réessayez, ou tapez votre réponse.');
+    $('typeFallback').classList.remove('hidden');
+    return;
+  }
+  recActive=true; badge('PARLEZ'); setAir('rx');
+  $('btnPTT').classList.add('live'); $('btnPTT').textContent='🔴 ÉCOUTE… (parlez, puis marquez une pause)';
+  liveRow=meBubble('🎙️ …', true);
+  clearTimeout(maxTimer); maxTimer=setTimeout(finalizeInput, 15000); // sécurité si ça ne se termine jamais
+}
+function endListen(){ finalizeInput(); } // clic « terminer » → on évalue tout de suite
+function finalizeInput(){
+  if(inputDone) return; inputDone=true;              // évaluation UNE seule fois, quoi qu'il arrive
+  clearTimeout(silenceTimer); clearTimeout(maxTimer);
+  try{ if(rec) rec.stop(); }catch(e){}
+  console.log('[VFR] finalizeInput → évaluation');
+  recActive=false; setAir(''); $('btnPTT').classList.remove('live'); $('btnPTT').textContent='🎙️ APPUYER POUR PARLER';
+  const said=(finalTranscript.trim()||lastHeard.trim());
+  const alts=(finalAlts.trim()||lastAlts.trim()||said);
+  if(said){ evaluate(said, said+' '+alts); }
+  else if(!recErrored){ if(liveRow){ liveRow.remove(); liveRow=null; } sysMsg('⚠️ Aucune parole détectée — parlez plus près du micro, ou tapez votre réponse.'); $('typeFallback').classList.remove('hidden'); }
+}
+let lastHeard='';
+
+if(rec){
+  rec.onaudiostart=()=>{ badge('🎤 MICRO ACTIF'); if(liveRow){ const b=liveRow.querySelector('.bubble'); if(b && /^🎙️/.test(b.textContent)) b.textContent='🎤 …'; } };
+  rec.onspeechstart=()=>{ badge('JE VOUS ÉCOUTE'); };
+  rec.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal){
+        finalTranscript += r[0].transcript+' ';
+        for(let k=0;k<r.length;k++) finalAlts += r[k].transcript+' '; // toutes les hypothèses du moteur
+      } else interim += r[0].transcript;
+    }
+    const shown=(finalTranscript+interim).trim();
+    lastHeard=shown; lastAlts=(finalAlts+' '+interim).trim();
+    if(liveRow){ const b=liveRow.querySelector('.bubble'); if(b) b.textContent=shown||'🎤 …'; }
+    // fin de parole détectée après ~1,8 s de silence → on évalue (ne dépend PAS de onend)
+    clearTimeout(silenceTimer); silenceTimer=setTimeout(finalizeInput, 1800);
+  };
+  rec.onerror=e=>{
+    clearTimeout(silenceTimer); clearTimeout(maxTimer);
+    const err=(e && e.error)||'';
+    if(err==='not-allowed'||err==='service-not-allowed'){
+      recErrored=true; micReady=false; if(liveRow){liveRow.remove();liveRow=null;}
+      sysMsg('🎙️ Micro refusé/bloqué. Cadenas 🔒 barre d’adresse → Micro → Autoriser (et ouvrez via <code>http://localhost</code>). Sinon, tapez votre réponse.');
+      $('typeFallback').classList.remove('hidden');
+    } else if(err==='audio-capture'){
+      recErrored=true; if(liveRow){liveRow.remove();liveRow=null;}
+      sysMsg('🎙️ Aucun micro détecté, ou micro occupé par une autre application. Vérifiez votre micro puis réessayez.');
+      $('typeFallback').classList.remove('hidden');
+    } else if(err==='network'){
+      recErrored=true; if(liveRow){liveRow.remove();liveRow=null;}
+      sysMsg('🌐 Reconnaissance vocale indisponible hors-ligne : Chrome a besoin d’internet. Connectez-vous, ou tapez votre réponse.');
+      $('typeFallback').classList.remove('hidden');
+    }
+    // 'no-speech' / 'aborted' : laissés à onend
+  };
+  rec.onend=()=>{ finalizeInput(); };
+}
+
+$('btnPTT').onclick=()=>{ if(!SR){ $('typeInput').focus(); return; } recActive?endListen():beginListen(); };
+$('typeInput').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.value.trim()){ const v=e.target.value; e.target.value=''; liveRow=meBubble(v); evaluate(v);} });
+
+function evaluate(said, matchSrc){
+  const norm=normalize(matchSrc||said); // matche sur toutes les hypothèses du moteur
+  logLine('lp','F-HUET ▸ '+said);
+  // finalise la bulle pilote (ou en crée une)
+  if(liveRow){ const b=liveRow.querySelector('.bubble'); if(b){ b.classList.remove('live'); b.textContent=said; } }
+  else { liveRow=meBubble(said); }
+  const myRow=liveRow; liveRow=null;
+
+  const results=curTurn.expect.map(item=>({item, ok:item.p.some(rx=>rx.test(norm))}));
+  const got=results.filter(r=>r.ok).length, tot=results.length;
+  const cov=got/tot, pctTxt=Math.round(cov*100)+'%';
+  const chipsHtml=results.map(r=>`<span class="chip ${r.ok?'got':'miss'}">${r.ok?'✓':'✗'} ${r.item.l}</span>`).join('');
+  const cls = cov>=0.7?'ok' : cov>=0.4?'warn' : 'err';
+  const mark = cov>=0.7?'✓' : cov>=0.4?'≈' : '✗';
+
+  itemsGot+=got; itemsTot+=tot;
+  meCaption(myRow, `<span class="${cls}">${mark} ${pctTxt}</span> ${chipsHtml}`);
+  updateMeters();
+  // le contrôle répond TOUJOURS : on enchaîne sur sa transmission suivante (comme en vraie R/T)
+  setTimeout(nextTurn, 650);
+}
+
+function nextTurn(){ idx++; advance(); }
+
+/* ---- compteurs ---- */
+function countPilotTotal(){ return S.turns.filter(t=>t.who==='pilot').length; }
+function countPilotIndex(){ let c=0; for(let i=0;i<=idx&&i<S.turns.length;i++) if(S.turns[i].who==='pilot')c++; return c; }
+function updateMeters(){
+  $('mStep').textContent=`${Math.min(countPilotIndex(),countPilotTotal())}/${countPilotTotal()}`;
+  $('mItems').textContent=`${itemsGot}/${itemsTot}`;
+  $('mScore').textContent = itemsTot? Math.round(itemsGot/itemsTot*100)+'%' : '—';
+}
+function logLine(cls,txt){ const d=document.createElement('div'); d.className='l '+cls; d.textContent=txt; $('log').appendChild(d); $('log').scrollTop=$('log').scrollHeight; }
+
+/* ---- fin ---- */
+async function finish(aborted){
+  running=false; endListen(); speechSynthesis && speechSynthesis.cancel();
+  badge('TERMINÉ'); setAir('');
+  const pct=itemsTot?Math.round(itemsGot/itemsTot*100):0;
+  const wasSession = sessionTotal>1;
+  const titre = wasSession ? `Fin de la session (${sessionTotal} exercices).` : 'Fin de l’exercice.';
+  let verdict = pct>=90?'Excellent — phraséologie maîtrisée ✈️' : pct>=70?'Bien — quelques collationnements à soigner' : pct>=50?'À travailler — reprenez les indices' : 'Débriefing conseillé — rejouez en Débutant';
+  $('pilotPrompt').textContent='Terminé.';
+  $('hintBox').style.display='none';
+  sysMsg(`<b>${titre}</b><br>Score ${pct}% — ${itemsGot}/${itemsTot} éléments<br>${verdict}${aborted?' · (interrompu)':''}`);
+  $('turnLabel').textContent='';
+  sessionQueue=[]; sessionTotal=0;
+  // boutons de fin
+  $('btnPTT').textContent='↩ Retour au briefing'; $('btnPTT').classList.remove('live');
+  $('btnPTT').onclick=()=>{
+    $('configPanel').classList.remove('hidden');
+    $('commsPanel').classList.add('hidden');
+    $('scorePanel').classList.add('hidden');
+    badge('EN ATTENTE');
+    resetPTT();
+  };
+  logLine('ls',`— Score final : ${pct}% —`);
+}
+
+/* ---- thème clair / sombre (bascule + mémorisation) ---- */
+function themeNow(){ return document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light'; }
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  try{ localStorage.setItem('vfr-theme',t); }catch(e){}
+  const b=document.getElementById('themeToggle'); if(b) b.textContent = t==='dark'?'☀️':'🌙';
+}
+applyTheme(themeNow()); // synchronise l'icône avec le thème déjà appliqué au chargement
+document.getElementById('themeToggle').onclick=()=>applyTheme(themeNow()==='dark'?'light':'dark');
+</script>
+</body>
+</html>
