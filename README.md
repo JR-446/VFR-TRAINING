@@ -86,13 +86,39 @@ Dans le dossier du projet :
 python3 -m http.server 5500
 ```
 
-Puis ouvrez **http://localhost:5500** dans **Google Chrome**.
+Puis ouvrez **http://localhost:5500** dans **Chrome**, **Safari** ou **Edge**.
 
-> ⚠️ La reconnaissance vocale nécessite **Chrome** et une origine sûre.
-> Ouvrir le fichier en `file://` peut bloquer le micro : passez par `localhost`.
+> ⚠️ La reconnaissance vocale exige une **origine sûre** : `localhost` ou `https://`.
+> Ouvrir le fichier en `file://` bloque le micro.
 > 🎧 Utilisez un **casque** pour éviter que le micro capte la voix du contrôle.
 > Si le micro est indisponible, une **saisie clavier de secours** s'active
 > automatiquement (tapez votre réponse, Entrée).
+
+## Sur iPhone / iPad
+
+L'app est adaptée aux écrans tactiles (mise en page téléphone, cibles de 44 px,
+zone sûre de l'encoche) et à **WebKit** — le moteur de Safari, mais aussi celui de
+**Chrome, Firefox et Edge sur iOS**, qui sont soumis aux mêmes règles.
+
+**Il faut du HTTPS.** C'est le seul vrai point bloquant : iOS refuse le micro et la
+reconnaissance vocale sur une page servie en `http://`, y compris depuis l'adresse IP
+locale de votre ordinateur (`http://192.168.x.x:5500`). Dans ce cas, l'app l'indique
+en haut de l'écran et bascule sur la saisie clavier.
+
+Solutions, au choix :
+
+- **GitHub Pages** — le projet étant une page statique, une publication du dépôt
+  (Settings → Pages → branche `main`) donne une URL `https://` utilisable directement
+  depuis l'iPhone, sans rien installer ;
+- un **tunnel** vers la machine de développement (`cloudflared tunnel --url http://localhost:5500`,
+  `ngrok http 5500`…), qui fournit une URL `https://` temporaire.
+
+À la première prise de parole, iOS demande **deux** autorisations distinctes :
+**Micro** puis **Reconnaissance vocale**. Il faut accepter les deux.
+
+> 📱 Sur iOS, la reconnaissance écoute **une phrase à la fois** (le mode continu de
+> Chrome desktop n'existe pas dans WebKit). Énoncez votre message d'un trait, puis
+> marquez une **pause d'environ 2 s** : l'évaluation se déclenche toute seule.
 
 ## Utilisation
 1. Choisissez difficulté, charge de travail, espace et scénario. Lisez le briefing.
