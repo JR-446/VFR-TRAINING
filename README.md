@@ -120,6 +120,36 @@ Solutions, au choix :
 > Chrome desktop n'existe pas dans WebKit). Énoncez votre message d'un trait, puis
 > marquez une **pause d'environ 2 s** : l'évaluation se déclenche toute seule.
 
+## Voix du contrôleur
+
+La voix passe par la **synthèse du système** (aucun compte, aucune clé, aucun réseau).
+Trois traitements la rendent nettement moins mécanique :
+
+- **Groupes de souffle.** La transmission est découpée sur la ponctuation et énoncée
+  groupe par groupe, avec de vraies pauses — `speechSynthesis` ignore la ponctuation
+  sur la plupart des voix, ce qui produisait un débit plat d'un seul tenant :
+  « Foxtrot-Hôtel Uniform Écho Tango, ⏸ Bordeaux Info, bonjour. ⏸ QNH 1013… »
+- **Contour mélodique.** Le débit et la hauteur varient légèrement d'un groupe à
+  l'autre, et la fin d'énoncé descend, comme une phrase française.
+- **Fond de porteuse.** Un souffle radio discret accompagne la transmission. Il ancre
+  la voix dans une radio et masque une partie des artefacts de synthèse.
+  (Désactivable avec **Sons radio**.)
+
+La meilleure voix française installée est sélectionnée automatiquement, en privilégiant
+la **qualité** puis l'**accent de France** — les voix de fantaisie livrées par macOS/iOS
+(Grandpa, Rocko, Flo…) sont écartées du menu. Le bouton **🔊 Tester** joue un exemple.
+
+### Obtenir une voix vraiment naturelle (gratuit)
+
+Les voix installées d'origine sont des voix « compactes », les plus robotiques. Les voix
+**Améliorée / Premium / Siri** d'Apple sont beaucoup plus naturelles et gratuites :
+
+- **macOS** — Réglages Système → Accessibilité → Contenu énoncé → Voix système →
+  Gérer les voix… → Français → téléchargez une voix *Améliorée* ou *Premium*
+- **iOS / iPadOS** — Réglages → Accessibilité → Contenu énoncé → Voix → Français
+
+Rechargez ensuite la page : la voix apparaît en tête du menu **Voix**, notée ✨.
+
 ## Utilisation
 1. Choisissez difficulté, charge de travail, espace et scénario. Lisez le briefing.
 2. **Démarrer** : le contrôle parle. Quand c'est à vous, cliquez **Appuyer pour parler**,

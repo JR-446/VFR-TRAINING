@@ -392,6 +392,7 @@
             <option value="natural">Naturelle (offline)</option>
           </select>
         </label>
+        <button class="btn" type="button" id="btnVoiceTest" title="Écouter un exemple avec la voix choisie">🔊 Tester</button>
         <span class="voicestatus" id="voiceStatus"></span>
       </div>
       <div class="note" id="compatNote"></div>
@@ -477,22 +478,52 @@ function speechify(t){
 }
 
 let VOICE=null;
+
+/* Voix de fantaisie livrées d'office par macOS/iOS : inutilisables pour du contrôle aérien. */
+const JOKE_VOICE=/\b(grandma|grandpa|rocko|shelley|sandy|flo|eddy|reed|bubbles|jester|superstar|trinoids|whisper|wobble|bells|boing|bahh|albert|organ|cellos|zarvox|junior|kathy|ralph|fred|bruce|deranged|hysterical|princess|bonnes? nouvelles|mauvaises? nouvelles|good news|bad news)\b/i;
+
+/* Note de qualité. L'ancien classement allait par prénom : « Amélie » passait avant
+   toute voix améliorée — or c'est du français du Canada, mauvais accent pour de la
+   phraséologie française. On classe désormais par palier de qualité, puis par accent. */
+function voiceScore(v){
+  const n=v.name||'', lang=v.lang||'';
+  if(JOKE_VOICE.test(n)) return -1;
+  let sc=0;
+  if(/fr[-_]FR/i.test(lang)) sc+=40;                    // France avant Canada/Belgique/Suisse
+  if(/siri/i.test(n)) sc+=30;                           // voix Siri : de loin les meilleures d'Apple
+  if(/premium|enhanced|améliorée|amelioree/i.test(n)) sc+=28;
+  if(/neural|natural/i.test(n)) sc+=24;
+  if(/google/i.test(n)) sc+=20;                         // voix Google (Chrome) : très au-dessus des compactes
+  if(/microsoft/i.test(n)) sc+=12;
+  if(v.localService===false) sc+=6;                     // voix serveur : généralement supérieures
+  if(/thomas|audrey|aurélie|aurelie|marie|virginie|nicolas/i.test(n)) sc+=4;
+  return sc;
+}
 function pickVoice(){
-  const vs=speechSynthesis.getVoices().filter(v=>/^fr/i.test(v.lang));
+  const vs=speechSynthesis.getVoices().filter(v=>/^fr/i.test(v.lang) && !JOKE_VOICE.test(v.name||''));
   if(!vs.length){ VOICE=null; return; }
-  // On privilégie les voix les plus naturelles disponibles (Google FR sur Chrome, voix Apple "enhanced"…)
-  const prefs=[/google/i,/amélie|amelie/i,/aurélie|aurelie/i,/audrey/i,/marie/i,/virginie/i,/thomas/i,/nicolas/i,/siri/i,/enhanced|premium|natural|neural/i];
-  for(const rx of prefs){ const v=vs.find(x=>rx.test(x.name)); if(v){ VOICE=v; return; } }
-  VOICE = vs.find(v=>/fr[-_]FR/i.test(v.lang)) || vs[0];
+  VOICE = vs.slice().sort((a,b)=>voiceScore(b)-voiceScore(a))[0];
+}
+
+/* Qualité d'une voix, pour l'affichage dans le menu. */
+function voiceTier(v){
+  if(/siri|premium|enhanced|améliorée|amelioree|neural|natural/i.test(v.name||'')) return ' ✨ améliorée';
+  if(/google|microsoft/i.test(v.name||'') || v.localService===false) return ' · en ligne';
+  return ' · compacte';
 }
 let voiceUserChose=false;
 function populateVoices(){
   const sel=document.getElementById('selVoice'); if(!sel || !('speechSynthesis' in window)) return;
-  const vs=speechSynthesis.getVoices().filter(v=>/^fr/i.test(v.lang));
+  const vs=speechSynthesis.getVoices().filter(v=>/^fr/i.test(v.lang) && !JOKE_VOICE.test(v.name||''));
   const keep = voiceUserChose ? sel.value : null;
   sel.innerHTML='';
   const b=document.createElement('option'); b.value='browser'; b.textContent='Voix du système (auto)'; sel.appendChild(b);
-  vs.forEach(v=>{ const o=document.createElement('option'); o.value=v.name; o.textContent=v.name+(/enhanced|premium|siri|neural/i.test(v.name)?' ✨':''); sel.appendChild(o); });
+  vs.slice().sort((a,b)=>voiceScore(b)-voiceScore(a)).forEach(v=>{
+    const o=document.createElement('option'); o.value=v.name;
+    const accent = /fr[-_]FR/i.test(v.lang||'') ? '' : ' ('+(v.lang||'').replace('_','-')+')';
+    o.textContent=v.name+accent+voiceTier(v);
+    sel.appendChild(o);
+  });
   const o=document.createElement('option'); o.value='natural'; o.textContent='Naturelle (offline, expérimental)'; sel.appendChild(o);
   if(keep && [...sel.options].some(x=>x.value===keep)) sel.value=keep;
   else sel.value = (VOICE&&VOICE.name) || 'browser';   // défaut = meilleure voix système, jamais Piper
@@ -544,6 +575,32 @@ const sfx={
   click(){ this.burst(0.045,'highpass',1400,0.09); },   // alternat (key-up)
   squelch(){ this.burst(0.16,'lowpass',1500,0.11); },   // queue de squelch
   hiss(){ this.burst(0.6,'lowpass',1100,0.05); },       // statique / silence radio
+  /* Souffle de porteuse pendant que le contrôle parle.
+     speechSynthesis ne donne pas accès à son flux audio : impossible de filtrer
+     la voix elle-même en bande 300–3400 Hz. Mais poser un lit de souffle radio
+     PAR-DESSUS produit le même effet perceptif — ça ancre la voix dans une radio
+     et ça masque une bonne partie des artefacts de synthèse. */
+  _carrier:null,
+  carrierOn(){
+    if(!this.on() || this._carrier) return; const c=ac(); if(!c) return;
+    try{
+      const n=(c.sampleRate*2)|0, buf=c.createBuffer(1,n,c.sampleRate), d=buf.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+      const src=c.createBufferSource(); src.buffer=buf; src.loop=true;
+      const bp=c.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1650; bp.Q.value=0.55;
+      const g=c.createGain(), t=c.currentTime;
+      g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.016,t+0.08); // très bas : un fond, pas un bruit
+      src.connect(bp); bp.connect(g); g.connect(c.destination); src.start();
+      this._carrier={src,g};
+    }catch(e){ this._carrier=null; }
+  },
+  carrierOff(){
+    const k=this._carrier; if(!k) return; this._carrier=null;
+    try{ const c=ac(), t=c.currentTime;
+      k.g.gain.cancelScheduledValues(t); k.g.gain.setValueAtTime(k.g.gain.value,t);
+      k.g.gain.exponentialRampToValueAtTime(0.0001,t+0.12); k.src.stop(t+0.2);
+    }catch(e){}
+  },
   beep(){ if(!this.on())return; const c=ac(); if(!c)return; const o=c.createOscillator(), g=c.createGain(), t=c.currentTime;
     o.type='sine'; o.frequency.value=920; g.gain.setValueAtTime(0.0001,t);
     g.gain.exponentialRampToValueAtTime(0.05,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
@@ -587,41 +644,131 @@ function playBlob(blob){
     }catch(e){ fin(); }
   });
 }
-function speakBrowser(phon){
+/* ------------------------------------------------------------------
+   Découpage en GROUPES DE SOUFFLE.
+   speechSynthesis ignore la ponctuation sur la plupart des voix : tout
+   sort d'un trait, sur un ton plat — c'est l'essentiel de l'effet robot.
+   Un vrai contrôleur segmente : « F-ET, ⏸ QNH 1013, ⏸ piste 17 ».
+   On énonce donc chaque groupe séparément, avec une vraie pause.
+   ------------------------------------------------------------------ */
+function breathGroups(t){
+  const parts=[]; let buf='';
+  for(const tok of String(t).split(/(\s+)/)){
+    buf+=tok;
+    const m=buf.match(/([,;:.!?])\s*$/);
+    // Une fin de phrase coupe même si le groupe est court : sinon « bonjour. » se
+    // collait au groupe suivant et la pause de fin d'énoncé disparaissait.
+    if(m && buf.trim().length >= (/[.!?]/.test(m[1]) ? 3 : 10)){
+      parts.push({text:buf.trim(), mark:m[1]}); buf='';
+    }
+  }
+  if(buf.trim()) parts.push({text:buf.trim(), mark:'.'});
+  // fusionne les miettes (« F-ET, » seul sonne haché) avec le groupe suivant
+  const out=[];
+  for(const g of parts){
+    if(out.length && g.text.length<10) { out[out.length-1].text+=' '+g.text; out[out.length-1].mark=g.mark; }
+    else out.push(g);
+  }
+  return out.length?out:[{text:String(t), mark:'.'}];
+}
+
+/* Une transmission peut être coupée (bouton Terminer, passage au micro).
+   Ce jeton évite qu'une transmission annulée continue à débiter ses groupes. */
+let speakGen=0;
+function cancelSpeech(){ speakGen++; try{ speechSynthesis.cancel(); }catch(e){} }
+
+function currentVoice(){
+  const sv=document.getElementById('selVoice'), vn=sv?sv.value:'';
+  if(vn && vn!=='natural' && vn!=='browser'){
+    const v=speechSynthesis.getVoices().find(x=>x.name===vn);
+    if(v) return v;
+  }
+  return VOICE;
+}
+
+/* Énonce UN groupe. rate/pitch reçoivent une légère variation : une voix
+   parfaitement constante d'un groupe à l'autre est le second marqueur du robot. */
+function speakGroup(phon, rate, pitch){
   return new Promise(res=>{
-    if(!('speechSynthesis' in window)){ res(); return; }
-    try{ speechSynthesis.cancel(); }catch(e){}
     const u=new SpeechSynthesisUtterance(phon);
     u.lang='fr-FR';
-    const _sv=document.getElementById('selVoice'), _vn=_sv?_sv.value:'';
-    const _chosen=(_vn && _vn!=='natural' && _vn!=='browser') ? speechSynthesis.getVoices().find(x=>x.name===_vn) : null;
-    if(_chosen) u.voice=_chosen; else if(VOICE) u.voice=VOICE;
-    const d=curDiff; u.rate=d===1?0.92:d===3?1.08:1.0; u.pitch=1.0; u.volume=1;
+    const v=currentVoice(); if(v) u.voice=v;
+    u.rate=Math.max(.5,Math.min(2,rate)); u.pitch=Math.max(0,Math.min(2,pitch)); u.volume=1;
     let done=false;
     // iOS suspend spontanément la synthèse (changement d'onglet, session audio) : on la relance.
     const keep=setInterval(()=>{ try{ if(speechSynthesis.paused) speechSynthesis.resume(); }catch(e){} }, 500);
     const fin=()=>{ if(done)return; done=true; clearInterval(keep); clearTimeout(wd); res(); };
     u.onend=fin; u.onerror=fin;
     // garde-fou : si onend ne se déclenche pas (onglet en arrière-plan, voix absente…), on continue quand même
-    const est=Math.min(22000, 1400 + phon.length*85);
-    const wd=setTimeout(fin, est);
-    setTimeout(()=>{ try{ speechSynthesis.speak(u); }catch(e){ fin(); } }, 60);
+    const wd=setTimeout(fin, Math.min(15000, 1100 + phon.length*85/Math.max(.6,rate)));
+    setTimeout(()=>{ try{ speechSynthesis.speak(u); }catch(e){ fin(); } }, 30);
   });
 }
-async function speak(text){
-  const phon=speechify(text);
-  sfx.click();
-  if(Voice.mode()==='natural'){
-    if(Voice.ready){
-      try{ await Voice.speakNatural(phon); sfx.squelch(); return; }
-      catch(e){ console.warn('Synthèse Piper échouée — repli.',e); }
-    } else if(!Voice.failed){
-      Voice.init(); // prépare la voix en tâche de fond, sans bloquer cette transmission
+
+/* Énonce le texte BRUT (pas encore phonétisé) : le découpage se fait sur la
+   ponctuation d'origine, puis chaque groupe est phonétisé séparément. */
+async function speakBrowser(rawText){
+  if(!('speechSynthesis' in window)) return;
+  const gen=++speakGen;
+  try{ speechSynthesis.cancel(); }catch(e){}
+
+  const d=curDiff;
+  const baseRate = d===1?0.90 : d===3?1.06 : 0.98;
+  // en Débutant on allonge les pauses : plus intelligible, et plus proche d'un contrôleur qui articule
+  const pauseMul = d===1?1.35 : d===3?0.75 : 1;
+
+  const groups=breathGroups(rawText);
+  for(let i=0;i<groups.length;i++){
+    if(gen!==speakGen) return;                       // transmission interrompue
+    const g=groups[i], last=(i===groups.length-1);
+
+    // contour mélodique : la phrase française descend en fin d'énoncé, monte sur une question
+    let pitch=1.0;
+    if(last) pitch = /\?$/.test(g.mark) ? 1.07 : 0.95;
+    else pitch = 1.0 + ((i%2)?0.015:-0.015);
+    // micro-variation de débit, pour casser la régularité métronomique
+    const rate = baseRate + ((i%3)-1)*0.018;
+
+    await speakGroup(speechify(g.text), rate, pitch);
+    if(gen!==speakGen) return;
+
+    if(!last){
+      const long=/[.!?]/.test(g.mark);
+      await wait(Math.round((long?300:170)*pauseMul));
     }
   }
-  await speakBrowser(phon);
-  sfx.squelch();
 }
+async function speak(text){
+  sfx.click();
+  sfx.carrierOn();                       // ouverture de porteuse : le fond radio démarre
+  try{
+    if(Voice.mode()==='natural'){
+      if(Voice.ready){
+        try{ await Voice.speakNatural(speechify(text)); return; }
+        catch(e){ console.warn('Synthèse Piper échouée — repli.',e); }
+      } else if(!Voice.failed){
+        Voice.init(); // prépare la voix en tâche de fond, sans bloquer cette transmission
+      }
+    }
+    // texte BRUT : speakBrowser découpe sur la ponctuation d'origine puis phonétise groupe par groupe
+    await speakBrowser(text);
+  } finally {
+    sfx.carrierOff();
+    sfx.squelch();                       // fermeture d'alternat
+  }
+}
+
+/* écoute d'un exemple : la phrase type d'une vraie transmission, porteuse comprise */
+(function(){
+  const b=document.getElementById('btnVoiceTest'); if(!b) return;
+  b.onclick=async()=>{
+    if(b.disabled) return;
+    unlockAudio();                       // l'écoute part d'un geste utilisateur : indispensable sur iOS
+    b.disabled=true; const lbl=b.textContent; b.textContent='🔊 …';
+    try{ await speak('Foxtrot-Hôtel Uniform Écho Tango, Bordeaux Info, bonjour. QNH 1013, transpondeur 4231, rappelez verticale Marmande.'); }
+    finally{ b.disabled=false; b.textContent=lbl; }
+  };
+})();
 
 /* sélecteur de voix */
 (function(){ const sv=document.getElementById('selVoice'); if(!sv)return;
@@ -2614,7 +2761,18 @@ function compat(){
   else if(isWebKit) notes.push('🧭 <b>Safari</b> : la reconnaissance écoute <b>une phrase à la fois</b>. Énoncez votre message d’un trait puis marquez une <b>pause d’environ 2 s</b>. Au premier appui, autorisez <b>Micro</b> et <b>Reconnaissance vocale</b>.');
   else notes.push('🎙️ <b>Micro</b> : au 1<sup>er</sup> « Appuyer pour parler », le navigateur demande l’autorisation → cliquez <b>Autoriser</b>. Le voyant passe à « 🎤 MICRO ACTIF ». Bruit de fond faible et casque-micro conseillés.');
   notes.push('🎧 Conseil : casque recommandé (évite que le micro capte la voix du contrôle). Ouvrez de préférence via <code>http://localhost</code> (voir README) pour autoriser le micro.');
-  notes.push('🔊 <b>Voix</b> : par défaut la meilleure voix française de votre système. Pour un rendu plus naturel, installez une voix « <b>améliorée</b> » (macOS → Réglages Système → Accessibilité → Contenu énoncé → Voix → Français → ✨) : elle apparaîtra dans le menu <b>Voix</b>. (« Naturelle offline » est expérimentale et ne marche pas dans tous les navigateurs.)');
+  {
+    const chemin = isIOS
+      ? 'Réglages → <b>Accessibilité</b> → <b>Contenu énoncé</b> → <b>Voix</b> → Français'
+      : 'Réglages Système → <b>Accessibilité</b> → <b>Contenu énoncé</b> → <b>Voix système</b> → Gérer les voix… → Français';
+    notes.push('🔊 <b>Voix du contrôleur</b> : l’app choisit automatiquement la meilleure voix française installée, '
+      + 'découpe la transmission en groupes de souffle et y ajoute un fond de porteuse radio. '
+      + 'Utilisez <b>🔊 Tester</b> pour comparer les voix du menu.');
+    notes.push('✨ <b>Le vrai gain est gratuit</b> : les voix « <b>Améliorée</b> », « <b>Premium</b> » ou <b>Siri</b> d’Apple '
+      + 'sont bien plus naturelles que les voix compactes installées d’origine. '
+      + chemin + ' → téléchargez une voix marquée <b>Améliorée/Premium</b>, puis rechargez cette page : '
+      + 'elle apparaîtra en tête du menu <b>Voix</b>, notée ✨.');
+  }
   notes.push('ℹ️ Fréquences et codes transpondeur sont <b>pédagogiques</b> — vérifiez toujours la carte VAC / l’AIP avant un vol réel.');
   notes.push('📖 <b>69 scénarios</b> : <b>🗂️ 20 d’origine</b> du projet (inchangés) + <b>📘 49 ajouts</b> extraits du <b>Manuel de phraséologie à l’usage de la CAG</b> (DGAC / DSNA, 10<sup>e</sup> éd., 15 avril 2023) — partie française, contenu VFR uniquement, toutes phases de vol. Chaque briefing indique sa <b>provenance</b> et, pour les ajouts, la <b>page du manuel</b>.');
   $('compatNote').innerHTML=notes.join('<br>');
@@ -2838,7 +2996,7 @@ async function beginListen(){
   if(!SR || recActive) return;
   unlockAudio();
   // iOS ne gère qu'une seule session audio : tant que la synthèse parle, le micro reste muet.
-  try{ speechSynthesis.cancel(); }catch(e){}
+  cancelSpeech(); sfx.carrierOff();
   // WebKit : rec.start() doit rester DANS le geste du clic — aucun await avant, sinon la reco est refusée.
   if(isWebKit){ startRecognition(); return; }
   if(!(await ensureMic())) return;
@@ -2959,7 +3117,7 @@ function logLine(cls,txt){ const d=document.createElement('div'); d.className='l
 
 /* ---- fin ---- */
 async function finish(aborted){
-  running=false; endListen(); speechSynthesis && speechSynthesis.cancel();
+  running=false; endListen(); cancelSpeech(); sfx.carrierOff();
   badge('TERMINÉ'); setAir('');
   const pct=itemsTot?Math.round(itemsGot/itemsTot*100):0;
   const wasSession = sessionTotal>1;
