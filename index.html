@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>VFR Radio — Entraînement radiotéléphonie (F-HUET)</title>
 <script>try{var _t=localStorage.getItem('vfr-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light');document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <style>
@@ -21,8 +21,11 @@
     --mono:'SF Mono',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;min-height:100vh;padding:52px 20px 72px;color:var(--ink);font-family:var(--sans);
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{margin:0;min-height:100vh;min-height:100dvh;
+    padding:calc(52px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right))
+            calc(72px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+    color:var(--ink);font-family:var(--sans);
     -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
     background:
       radial-gradient(60% 46% at 12% -4%, rgba(168,85,247,.22), transparent 60%),
@@ -77,15 +80,12 @@
   .btn{cursor:pointer;font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:-.01em;
     padding:13px 22px;border-radius:999px;border:1px solid var(--card-brd);background:rgba(255,255,255,.72);color:var(--violet-d);
     transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .18s,background .18s}
-  .btn:hover{transform:translateY(-2px);box-shadow:0 14px 28px -14px rgba(124,58,237,.55);background:#fff}
   .btn:active{transform:translateY(0)}
   .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
   .btn:focus-visible,select:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
   .btn.primary{background:var(--grad);border:none;color:#fff;box-shadow:0 14px 32px -12px rgba(109,40,217,.7)}
-  .btn.primary:hover{box-shadow:0 20px 42px -12px rgba(109,40,217,.85)}
   .btn.ptt{width:100%;padding:24px;font-size:17px;font-weight:700;letter-spacing:.01em;border:none;color:#fff;
     background:var(--grad);border-radius:20px;box-shadow:0 18px 44px -14px rgba(109,40,217,.75)}
-  .btn.ptt:hover{transform:translateY(-2px)}
   .btn.ptt.live{background:linear-gradient(120deg,#db2777,#e879f9);animation:pulse 1.4s infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(219,39,119,.5)}50%{box-shadow:0 0 0 16px rgba(219,39,119,0)}}
   .toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;align-items:center}
@@ -121,7 +121,7 @@
   .meters>div{font-size:13px;color:var(--ink3);font-weight:600}
   .meters b{display:block;margin-top:4px;font-size:26px;font-weight:700;letter-spacing:-.02em;
     background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
-  .log{max-height:260px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;margin-top:16px;border-top:1px solid var(--card-brd);padding-top:14px}
+  .log{max-height:260px;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;font-family:var(--mono);font-size:12.5px;line-height:1.6;margin-top:16px;border-top:1px solid var(--card-brd);padding-top:14px}
   .log .l{padding:5px 0;border-bottom:1px solid rgba(124,58,237,.07)}
   .log .la{color:var(--violet-d)} .log .lp{color:var(--indigo)} .log .ls{color:var(--ink3)}
 
@@ -142,7 +142,6 @@
   .segmented{display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(124,58,237,.07);border:1px solid var(--card-brd)}
   .seg{flex:1;border:none;background:transparent;color:var(--ink2);font-family:var(--sans);font-size:14px;font-weight:600;
     padding:11px 8px;border-radius:9px;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s}
-  .seg:hover{color:var(--ink)}
   .seg.is-on{background:var(--grad);color:#fff;box-shadow:0 8px 18px -10px rgba(109,40,217,.75)}
   .options{margin-top:16px;gap:16px}
   .voicepick{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink2);font-weight:500;margin:0}
@@ -151,7 +150,7 @@
   html[data-theme="dark"] .segmented{background:rgba(255,255,255,.05)}
 
   /* ===== fil de discussion (style iMessage) ===== */
-  .thread{display:flex;flex-direction:column;gap:7px;max-height:min(52vh,440px);overflow-y:auto;
+  .thread{display:flex;flex-direction:column;gap:7px;max-height:min(52dvh,440px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
     padding:4px 2px;margin-bottom:18px}
   .row{display:flex;flex-direction:column;max-width:84%}
   .row.atc{align-self:flex-start;align-items:flex-start}
@@ -179,12 +178,11 @@
   .composer .toolbar:first-of-type{margin-top:16px}
 
   /* ===== interrupteur de thème ===== */
-  .theme-toggle{position:fixed;top:22px;right:22px;z-index:20;width:46px;height:46px;border-radius:50%;
+  .theme-toggle{position:fixed;top:calc(22px + env(safe-area-inset-top));right:calc(22px + env(safe-area-inset-right));z-index:20;width:46px;height:46px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;line-height:1;
     background:rgba(255,255,255,.6);border:1px solid var(--card-brd);
     backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:var(--shadow);
     transition:transform .25s cubic-bezier(.2,.7,.2,1)}
-  .theme-toggle:hover{transform:translateY(-2px) rotate(-10deg)}
 
   /* ===== radar (panneau score) ===== */
   .score-head{display:flex;justify-content:space-between;align-items:flex-start;gap:22px;flex-wrap:wrap}
@@ -236,6 +234,90 @@
   html[data-theme="dark"] .row.atc .bubble{background:#282141;color:#ece6fb}
   html[data-theme="dark"] .bubble.typing span{background:#8a80a6}
   html[data-theme="dark"] .composer .coach{background:rgba(255,255,255,.05)}
+
+  /* ============================================================
+     iOS / Safari / écrans tactiles
+     ============================================================ */
+
+  /* Le survol ne s'applique qu'aux vrais pointeurs : sur iOS l'état :hover
+     reste "collé" après un tap et décale visuellement le bouton. */
+  @media (hover:hover) and (pointer:fine){
+    .btn:hover{transform:translateY(-2px);box-shadow:0 14px 28px -14px rgba(124,58,237,.55);background:#fff}
+    .btn.primary:hover{box-shadow:0 20px 42px -12px rgba(109,40,217,.85)}
+    .btn.ptt:hover{transform:translateY(-2px)}
+    .seg:hover{color:var(--ink)}
+    .theme-toggle:hover{transform:translateY(-2px) rotate(-10deg)}
+    html[data-theme="dark"] .btn:not(.primary):not(.ptt):hover{background:rgba(255,255,255,.11)}
+  }
+
+  /* Retour tactile discret + suppression du délai de double-tap */
+  a,button,select,input,.seg,.checkbox,.voicepick{-webkit-tap-highlight-color:rgba(124,58,237,.14)}
+  button,.btn,.seg,.theme-toggle{touch-action:manipulation}
+
+  /* iOS ne gère pas background-attachment:fixed (rendu figé puis saccadé au scroll). */
+  @supports (-webkit-touch-callout:none){
+    body{background-attachment:scroll}
+  }
+
+  @media (pointer:coarse){
+    /* ≥16px : en dessous, Safari iOS zoome sur le champ au focus et décale toute la page */
+    select,input[type=text],textarea{font-size:16px;min-height:44px}
+    .voicepick select{font-size:16px;min-height:44px;padding:10px 32px 10px 12px}
+    /* cibles tactiles : minimum 44px (recommandation Apple) */
+    .btn{min-height:44px}
+    .seg{min-height:44px;padding:12px 8px}
+    .checkbox{min-height:44px}
+    .checkbox input{width:20px;height:20px;flex:none}
+    .theme-toggle{width:48px;height:48px}
+    /* allège le rendu : le halo animé + flou est très coûteux sur iPhone */
+    body::before{animation:none;filter:blur(34px)}
+    .panel{backdrop-filter:blur(12px) saturate(140%);-webkit-backdrop-filter:blur(12px) saturate(140%)}
+  }
+
+  /* ---- téléphone ---- */
+  @media (max-width:640px){
+    body{padding:calc(30px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+                 calc(48px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+    .grid{gap:16px}
+    .panel{padding:20px 16px;border-radius:20px}
+    .topbar{margin-bottom:28px}
+    /* dégage le texte de dessous le bouton de thème */
+    .eyebrow{font-size:11px;letter-spacing:.2em;padding:0 54px;margin-bottom:10px}
+    h1{font-size:clamp(34px,10vw,48px)}
+    .tagline{font-size:15.5px;margin-top:12px}
+    .badge{margin-top:18px}
+    .theme-toggle{top:calc(10px + env(safe-area-inset-top));right:calc(12px + env(safe-area-inset-right));font-size:18px}
+    /* les 4 actions passaient sur 3 lignes : grille 2×2 nette */
+    #commsPanel .toolbar{gap:8px}
+    /* base volontairement sous la moitié : le flex-grow réétale ensuite proprement en 2×2.
+       À calc(50% - 4px) le total tombait au pixel près sur la largeur du conteneur → 3 lignes. */
+    #commsPanel .toolbar .btn:not(.ptt){flex:1 1 calc(50% - 14px);margin-left:0 !important;padding:13px 8px;font-size:15px}
+    .btn.ptt{padding:20px;font-size:16px}
+    .radio{flex-wrap:wrap;gap:8px;font-size:13px}
+    #turnLabel{margin-left:auto}
+    .row{max-width:90%}
+    .bubble{font-size:15.5px}
+    .meters{gap:18px}
+    .meters b{font-size:22px}
+    .score-head{gap:14px}
+    .radar{width:84px;height:84px}
+    .log{max-height:200px}
+    .fill{flex-direction:column}
+  }
+
+  /* ---- petit téléphone (SE / mini) ---- */
+  @media (max-width:380px){
+    .panel{padding:18px 13px}
+    .seg{font-size:13px;padding:12px 4px}
+    h1{font-size:34px}
+  }
+
+  /* ---- paysage bas de plafond : on rend le fil plus compact ---- */
+  @media (max-height:520px) and (orientation:landscape){
+    body{padding-top:calc(14px + env(safe-area-inset-top))}
+    .topbar{margin-bottom:16px}
+    .thread{max-height:44dvh}
+  }
 </style>
 </head>
 <body>
@@ -415,11 +497,38 @@ function populateVoices(){
   if(keep && [...sel.options].some(x=>x.value===keep)) sel.value=keep;
   else sel.value = (VOICE&&VOICE.name) || 'browser';   // défaut = meilleure voix système, jamais Piper
 }
-if('speechSynthesis' in window){ pickVoice(); populateVoices(); speechSynthesis.onvoiceschanged=()=>{ pickVoice(); populateVoices(); }; }
+if('speechSynthesis' in window){
+  pickVoice(); populateVoices();
+  speechSynthesis.onvoiceschanged=()=>{ pickVoice(); populateVoices(); };
+  // Safari/iOS : getVoices() est vide au chargement et onvoiceschanged n'arrive pas toujours.
+  let _tries=0;
+  const _poll=setInterval(()=>{
+    if(VOICE || ++_tries>20){ clearInterval(_poll); return; }
+    pickVoice(); populateVoices();
+  }, 250);
+}
 
 /* ---- sons radio (Web Audio, synthétisés — aucun fichier) ---- */
 let AC=null;
 function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); }catch(e){ AC=null; } return AC; }
+
+/* iOS n'autorise l'audio que s'il a été amorcé PENDANT un geste utilisateur.
+   speak() arrive plus tard, après plusieurs await : le geste est perdu et
+   iOS ignore alors silencieusement toutes les transmissions du contrôle.
+   On amorce donc les deux moteurs (Web Audio + synthèse) au premier appui. */
+let ttsUnlocked=false;
+function unlockAudio(){
+  try{ const c=ac(); if(c && c.state==='suspended') c.resume(); }catch(e){}
+  if(ttsUnlocked || !('speechSynthesis' in window)) return;
+  ttsUnlocked=true;
+  try{
+    const u=new SpeechSynthesisUtterance(' ');
+    u.volume=0; u.lang='fr-FR';
+    speechSynthesis.speak(u);   // énoncé muet : ouvre l'autorisation audio pour la suite
+  }catch(e){}
+}
+document.addEventListener('touchend', unlockAudio, {once:true, passive:true});
+document.addEventListener('click', unlockAudio, {once:true});
 const sfx={
   on(){ const c=document.getElementById('chkSfx'); return c?c.checked:true; },
   burst(dur,filter,freq,gain){
@@ -488,7 +597,10 @@ function speakBrowser(phon){
     const _chosen=(_vn && _vn!=='natural' && _vn!=='browser') ? speechSynthesis.getVoices().find(x=>x.name===_vn) : null;
     if(_chosen) u.voice=_chosen; else if(VOICE) u.voice=VOICE;
     const d=curDiff; u.rate=d===1?0.92:d===3?1.08:1.0; u.pitch=1.0; u.volume=1;
-    let done=false; const fin=()=>{ if(done)return; done=true; clearTimeout(wd); res(); };
+    let done=false;
+    // iOS suspend spontanément la synthèse (changement d'onglet, session audio) : on la relance.
+    const keep=setInterval(()=>{ try{ if(speechSynthesis.paused) speechSynthesis.resume(); }catch(e){} }, 500);
+    const fin=()=>{ if(done)return; done=true; clearInterval(keep); clearTimeout(wd); res(); };
     u.onend=fin; u.onerror=fin;
     // garde-fou : si onend ne se déclenche pas (onglet en arrière-plan, voix absente…), on continue quand même
     const est=Math.min(22000, 1400 + phon.length*85);
@@ -535,11 +647,32 @@ window.addEventListener('unhandledrejection', e=>{
    2. RECONNAISSANCE VOCALE — le pilote répond au micro
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-const isSafari = /apple/i.test(navigator.vendor||'') && /safari/i.test(navigator.userAgent) && !/chrome|crios|chromium|edg|fxios/i.test(navigator.userAgent);
+
+/* Détection du MOTEUR, pas de la marque du navigateur.
+   Sur iOS, Chrome (CriOS), Firefox (FxiOS) et Edge (EdgiOS) sont obligés d'utiliser
+   WebKit : ils ont exactement les mêmes limites que Safari. Les traiter comme Chrome
+   desktop (continuous + hypothèses multiples) casse la reconnaissance. */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+           || (/Mac/.test(navigator.userAgent) && navigator.maxTouchPoints > 1); // iPadOS en « mode bureau »
+const isSafariDesktop = /apple/i.test(navigator.vendor||'')
+           && /safari/i.test(navigator.userAgent)
+           && !/chrome|chromium|android/i.test(navigator.userAgent);
+const isWebKit = isIOS || isSafariDesktop;
+const isSafari = isWebKit;   // conservé : utilisé par compat() et beginListen()
+
 let rec=null, recActive=false, finalTranscript='', finalAlts='', lastAlts='', silenceTimer=null, maxTimer=null, inputDone=false;
-if(SR){
-  // Safari : reconnaissance mono-coup (continuous ignoré) et 1 seule hypothèse ; Chrome : continu + hypothèses multiples
-  rec=new SR(); rec.lang='fr-FR'; rec.interimResults=true; rec.continuous=!isSafari; rec.maxAlternatives=isSafari?1:6;
+
+/* WebKit refuse souvent de redémarrer une instance déjà utilisée (« start() » sans effet,
+   aucun événement). On en fabrique donc une neuve à chaque prise de parole. */
+function makeRec(){
+  if(!SR) return null;
+  const r=new SR();
+  r.lang='fr-FR';
+  r.interimResults=true;
+  r.continuous=!isWebKit;              // WebKit ignore continuous et coupe après une phrase
+  try{ r.maxAlternatives=isWebKit?1:6; }catch(e){}  // >1 lève une exception sur certaines versions
+  wireRec(r);
+  return r;
 }
 
 /* Normalise la parole du pilote pour l'évaluation :
@@ -2469,10 +2602,17 @@ let sessionQueue=[], sessionTotal=0; // file d'exercices pour le mode session
 function compat(){
   const notes=[];
   if(location.protocol==='file:') notes.push('⛔ <b>Ouvert en file:// — le micro est bloqué.</b> Lancez <code>node server.js</code> (ou <code>python3 -m http.server 5500</code>) dans le dossier, puis ouvrez <b>http://localhost:5500</b>.');
+  // Contexte non sécurisé : iOS/Safari refusent micro ET reconnaissance vocale, sans message d'erreur exploitable.
+  else if(!window.isSecureContext){
+    notes.push('⛔ <b>Page servie en HTTP non sécurisé</b> ('+location.host+'). Safari et tous les navigateurs iOS '
+      + 'bloquent le micro hors <b>HTTPS</b> (ou <code>localhost</code>). Sur iPhone/iPad, ouvrez l\'app via une '
+      + 'adresse <b>https://</b> — par exemple une publication GitHub Pages du dépôt — sinon seule la saisie clavier fonctionnera.');
+  }
   if(!('speechSynthesis' in window)) notes.push('⚠️ Synthèse vocale indisponible sur ce navigateur.');
-  if(!SR) notes.push('⚠️ Reconnaissance vocale indisponible — utilisez <b>Google Chrome</b>. Une saisie clavier de secours s’activera.');
-  else if(isSafari) notes.push('🧭 <b>Safari détecté</b> : son support de la reconnaissance vocale est <b>limité et instable</b>. Pour une expérience fiable, ouvrez l’app dans <b>Google Chrome</b>. En Safari, énoncez votre message d’un trait puis faites une <b>pause de ~2 s</b> ; sinon utilisez la saisie clavier.');
-  else notes.push('🎙️ <b>Micro</b> : au 1<sup>er</sup> « Appuyer pour parler », Chrome demande l’autorisation → cliquez <b>Autoriser</b>. Le voyant passe à « 🎤 MICRO ACTIF ». Bruit de fond faible et casque-micro conseillés.');
+  if(!SR) notes.push('⚠️ Reconnaissance vocale indisponible sur ce navigateur. La <b>saisie clavier</b> de secours s’activera automatiquement.');
+  else if(isIOS) notes.push('📱 <b>iPhone / iPad</b> : appuyez sur « Appuyer pour parler », puis autorisez <b>Micro</b> et <b>Reconnaissance vocale</b> (deux demandes distinctes, une seule fois). iOS écoute <b>une phrase à la fois</b> : énoncez votre message d’un trait, puis marquez une <b>pause d’environ 2 s</b> — l’évaluation se déclenche toute seule. Réglages → Safari → Micro doit être sur « Demander » ou « Autoriser ».');
+  else if(isWebKit) notes.push('🧭 <b>Safari</b> : la reconnaissance écoute <b>une phrase à la fois</b>. Énoncez votre message d’un trait puis marquez une <b>pause d’environ 2 s</b>. Au premier appui, autorisez <b>Micro</b> et <b>Reconnaissance vocale</b>.');
+  else notes.push('🎙️ <b>Micro</b> : au 1<sup>er</sup> « Appuyer pour parler », le navigateur demande l’autorisation → cliquez <b>Autoriser</b>. Le voyant passe à « 🎤 MICRO ACTIF ». Bruit de fond faible et casque-micro conseillés.');
   notes.push('🎧 Conseil : casque recommandé (évite que le micro capte la voix du contrôle). Ouvrez de préférence via <code>http://localhost</code> (voir README) pour autoriser le micro.');
   notes.push('🔊 <b>Voix</b> : par défaut la meilleure voix française de votre système. Pour un rendu plus naturel, installez une voix « <b>améliorée</b> » (macOS → Réglages Système → Accessibilité → Contenu énoncé → Voix → Français → ✨) : elle apparaîtra dans le menu <b>Voix</b>. (« Naturelle offline » est expérimentale et ne marche pas dans tous les navigateurs.)');
   notes.push('ℹ️ Fréquences et codes transpondeur sont <b>pédagogiques</b> — vérifiez toujours la carte VAC / l’AIP avant un vol réel.');
@@ -2551,7 +2691,7 @@ function resetPTT(){
 /* ---- démarrage d'un exercice (continuing=true si on enchaîne une session) ---- */
 function startExercise(scn, continuing){
   S=scn; idx=0; attempts=0; running=true;
-  ac();               // réveille l'audio sur le geste utilisateur
+  unlockAudio();      // réveille Web Audio ET la synthèse vocale, dans le geste utilisateur (obligatoire sur iOS)
   if(Voice.mode()==='natural') Voice.init(); // précharge la voix naturelle en tâche de fond
   resolveConfig();
   $('configPanel').classList.add('hidden');
@@ -2667,6 +2807,14 @@ $('btnAbort').onclick=()=>finish(true);
 
 /* ---- reconnaissance / évaluation ---- */
 let micReady=false, recErrored=false;
+
+/* Le chemin pour ré-autoriser le micro n'est pas le même selon la plateforme. */
+function micHelp(){
+  if(isIOS) return 'Sur iPhone/iPad : touchez <b>« aA »</b> à gauche de la barre d’adresse → <b>Réglages du site web</b> → Micro → <b>Autoriser</b>. '
+                 + 'Vérifiez aussi <b>Réglages → Safari → Micro</b>, et que la page est bien en <b>https://</b> (ou localhost).';
+  if(isWebKit) return 'Dans Safari : menu <b>Safari → Réglages pour ce site web…</b> → Micro → <b>Autoriser</b>.';
+  return 'Cliquez sur le cadenas 🔒 dans la barre d’adresse → Micro → Autoriser, et ouvrez via <code>http://localhost</code>.';
+}
 async function ensureMic(){
   if(micReady) return true;
   if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){ micReady=true; return true; }
@@ -2680,7 +2828,7 @@ async function ensureMic(){
     const why = (n==='NotAllowedError'||n==='SecurityError') ? 'micro refusé/bloqué'
               : (n==='NotFoundError'||n==='DevicesNotFoundError') ? 'aucun micro détecté'
               : ('micro indisponible'+(n?' ('+n+')':''));
-    sysMsg('🎙️ '+why+'. Cliquez sur le cadenas 🔒 dans la barre d’adresse → Micro → Autoriser, et ouvrez via <code>http://localhost</code>. Sinon, tapez votre réponse ci-dessous.');
+    sysMsg('🎙️ '+why+'. '+micHelp()+' Sinon, tapez votre réponse ci-dessous.');
     $('typeFallback').classList.remove('hidden'); try{$('typeInput').focus();}catch(_){}
     return false;
   }
@@ -2688,18 +2836,27 @@ async function ensureMic(){
 
 async function beginListen(){
   if(!SR || recActive) return;
-  ac();
-  // Safari : démarrer DANS le geste du clic (pas d'await avant rec.start, sinon Safari bloque la reco)
-  if(isSafari){ startRecognition(); return; }
+  unlockAudio();
+  // iOS ne gère qu'une seule session audio : tant que la synthèse parle, le micro reste muet.
+  try{ speechSynthesis.cancel(); }catch(e){}
+  // WebKit : rec.start() doit rester DANS le geste du clic — aucun await avant, sinon la reco est refusée.
+  if(isWebKit){ startRecognition(); return; }
   if(!(await ensureMic())) return;
   startRecognition();
 }
 function startRecognition(){
   sfx.beep();
   finalTranscript=''; finalAlts=''; lastHeard=''; lastAlts=''; recErrored=false; inputDone=false;
+  // instance neuve : WebKit (Safari, et tous les navigateurs iOS) ne relance pas une instance déjà servie.
+  // On détache d'abord les gestionnaires de l'ancienne : abort() déclenche son onend de façon
+  // asynchrone, ce qui clôturerait aussitôt la prise de parole qu'on vient d'ouvrir.
+  try{ if(rec){ rec.onend=rec.onresult=rec.onerror=rec.onaudiostart=rec.onspeechstart=null; rec.abort(); } }catch(e){}
+  rec=makeRec();
+  if(!rec){ $('typeFallback').classList.remove('hidden'); return; }
   try{ rec.start(); }
   catch(e){
-    try{ rec.stop(); }catch(_){}
+    try{ rec.abort(); }catch(_){}
+    rec=null;
     sysMsg('🎙️ Impossible de démarrer la reconnaissance — réessayez, ou tapez votre réponse.');
     $('typeFallback').classList.remove('hidden');
     return;
@@ -2723,7 +2880,8 @@ function finalizeInput(){
 }
 let lastHeard='';
 
-if(rec){
+/* Gestionnaires appliqués à chaque instance fraîche fabriquée par makeRec(). */
+function wireRec(rec){
   rec.onaudiostart=()=>{ badge('🎤 MICRO ACTIF'); if(liveRow){ const b=liveRow.querySelector('.bubble'); if(b && /^🎙️/.test(b.textContent)) b.textContent='🎤 …'; } };
   rec.onspeechstart=()=>{ badge('JE VOUS ÉCOUTE'); };
   rec.onresult=e=>{
@@ -2746,7 +2904,7 @@ if(rec){
     const err=(e && e.error)||'';
     if(err==='not-allowed'||err==='service-not-allowed'){
       recErrored=true; micReady=false; if(liveRow){liveRow.remove();liveRow=null;}
-      sysMsg('🎙️ Micro refusé/bloqué. Cadenas 🔒 barre d’adresse → Micro → Autoriser (et ouvrez via <code>http://localhost</code>). Sinon, tapez votre réponse.');
+      sysMsg('🎙️ Micro refusé/bloqué. '+micHelp()+' Sinon, tapez votre réponse.');
       $('typeFallback').classList.remove('hidden');
     } else if(err==='audio-capture'){
       recErrored=true; if(liveRow){liveRow.remove();liveRow=null;}
@@ -2754,7 +2912,7 @@ if(rec){
       $('typeFallback').classList.remove('hidden');
     } else if(err==='network'){
       recErrored=true; if(liveRow){liveRow.remove();liveRow=null;}
-      sysMsg('🌐 Reconnaissance vocale indisponible hors-ligne : Chrome a besoin d’internet. Connectez-vous, ou tapez votre réponse.');
+      sysMsg('🌐 Reconnaissance vocale indisponible : elle passe par les serveurs du navigateur et nécessite une connexion internet. Reconnectez-vous, ou tapez votre réponse.');
       $('typeFallback').classList.remove('hidden');
     }
     // 'no-speech' / 'aborted' : laissés à onend
