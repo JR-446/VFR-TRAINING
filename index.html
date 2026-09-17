@@ -547,15 +547,33 @@ function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioConte
    speak() arrive plus tard, après plusieurs await : le geste est perdu et
    iOS ignore alors silencieusement toutes les transmissions du contrôle.
    On amorce donc les deux moteurs (Web Audio + synthèse) au premier appui. */
-let ttsUnlocked=false;
+let ttsUnlocked=false, unlockAt=0;
+/* Vrai/faux : la synthèse a-t-elle réellement démarré au moins une fois ?
+   Sert à prévenir l'utilisateur quand le texte s'affiche sans qu'on entende rien. */
+let ttsEverStarted=false, ttsWarned=false, lastTtsError='';
 function unlockAudio(){
   try{ const c=ac(); if(c && c.state==='suspended') c.resume(); }catch(e){}
   if(ttsUnlocked || !('speechSynthesis' in window)) return;
-  ttsUnlocked=true;
+  ttsUnlocked=true; unlockAt=Date.now();
   try{
-    const u=new SpeechSynthesisUtterance(' ');
-    u.volume=0; u.lang='fr-FR';
-    speechSynthesis.speak(u);   // énoncé muet : ouvre l'autorisation audio pour la suite
+    const u=new SpeechSynthesisUtterance('\u00a0');  // insécable + débit max : durée quasi nulle
+    u.volume=0; u.rate=2; u.lang='fr-FR';
+    speechSynthesis.speak(u);   // énoncé muet : ouvre la session audio pour la suite
+  }catch(e){}
+}
+
+/* iOS : cancel() alors qu'un énoncé est encore en file referme la session audio
+   qui vient d'être accordée par le geste utilisateur — les speak() suivants sont
+   alors ignorés SANS erreur. On ne coupe donc que s'il y a vraiment à couper, on
+   épargne l'énoncé d'amorçage, et on laisse au moteur le temps de se rétablir. */
+async function prepareSynth(){
+  try{
+    const amorceEnCours = (Date.now()-unlockAt) < 800;
+    if(!amorceEnCours && (speechSynthesis.speaking || speechSynthesis.pending)){
+      speechSynthesis.cancel();
+      await wait(isWebKit ? 250 : 60);
+    }
+    if(speechSynthesis.paused) speechSynthesis.resume();
   }catch(e){}
 }
 document.addEventListener('touchend', unlockAudio, {once:true, passive:true});
@@ -690,18 +708,45 @@ function currentVoice(){
    parfaitement constante d'un groupe à l'autre est le second marqueur du robot. */
 function speakGroup(phon, rate, pitch){
   return new Promise(res=>{
-    const u=new SpeechSynthesisUtterance(phon);
-    u.lang='fr-FR';
-    const v=currentVoice(); if(v) u.voice=v;
-    u.rate=Math.max(.5,Math.min(2,rate)); u.pitch=Math.max(0,Math.min(2,pitch)); u.volume=1;
-    let done=false;
+    let done=false, started=false, essais=0, wd=null, relance=null;
     // iOS suspend spontanément la synthèse (changement d'onglet, session audio) : on la relance.
     const keep=setInterval(()=>{ try{ if(speechSynthesis.paused) speechSynthesis.resume(); }catch(e){} }, 500);
-    const fin=()=>{ if(done)return; done=true; clearInterval(keep); clearTimeout(wd); res(); };
-    u.onend=fin; u.onerror=fin;
-    // garde-fou : si onend ne se déclenche pas (onglet en arrière-plan, voix absente…), on continue quand même
-    const wd=setTimeout(fin, Math.min(15000, 1100 + phon.length*85/Math.max(.6,rate)));
-    setTimeout(()=>{ try{ speechSynthesis.speak(u); }catch(e){ fin(); } }, 30);
+    const fin=()=>{ if(done)return; done=true; clearInterval(keep); clearTimeout(wd); clearTimeout(relance); res(); };
+
+    const go=()=>{
+      if(done) return;            // une relance programmée ne doit pas parler après coup
+      essais++;
+      const u=new SpeechSynthesisUtterance(phon);
+      u.lang='fr-FR';
+      const v=currentVoice(); if(v) u.voice=v;
+      u.rate=Math.max(.5,Math.min(2,rate)); u.pitch=Math.max(0,Math.min(2,pitch)); u.volume=1;
+      u.onstart=()=>{ started=true; ttsEverStarted=true; };
+      u.onend=fin;
+      u.onerror=e=>{ lastTtsError=(e&&e.error)||'inconnue'; fin(); };
+      try{
+        if(speechSynthesis.paused) speechSynthesis.resume();
+        speechSynthesis.speak(u);
+      }catch(e){ lastTtsError='speak() a levé une exception'; fin(); return; }
+
+      // garde-fou de fin : si onend ne vient pas (onglet en arrière-plan, voix absente…), on continue
+      clearTimeout(wd);
+      wd=setTimeout(fin, Math.min(15000, 1100 + phon.length*85/Math.max(.6,rate)));
+
+      /* iOS avale parfois un énoncé sans lever la moindre erreur : ni onstart, ni
+         onend, ni onerror. Signature de ce cas : rien n'a démarré ET le moteur
+         n'a RIEN en cours. Une voix simplement lente à démarrer, elle, est
+         « speaking » ou « pending » : la relancer la couperait. On ne coupe donc
+         jamais ici — cancel() est précisément ce qui casse la session sur iOS. */
+      clearTimeout(relance);
+      relance=setTimeout(()=>{
+        if(done || started || essais>=2) return;
+        let occupe=true;
+        try{ occupe = speechSynthesis.speaking || speechSynthesis.pending; }catch(e){}
+        if(!occupe) go();
+      }, 1200);
+    };
+
+    setTimeout(go, 30);
   });
 }
 
@@ -710,7 +755,8 @@ function speakGroup(phon, rate, pitch){
 async function speakBrowser(rawText){
   if(!('speechSynthesis' in window)) return;
   const gen=++speakGen;
-  try{ speechSynthesis.cancel(); }catch(e){}
+  await prepareSynth();
+  if(gen!==speakGen) return;
 
   const d=curDiff;
   const baseRate = d===1?0.90 : d===3?1.06 : 0.98;
@@ -2896,12 +2942,26 @@ function atcReveal(row,text){ const b=row&&row.querySelector('.bubble'); if(!b)r
 function meBubble(text,live){ const r=bubbleRow('me'); const b=document.createElement('div'); b.className='bubble me'+(live?' live':''); b.textContent=text; r.appendChild(b); threadScroll(); return r; }
 function meCaption(row,html){ if(!row)return; const c=document.createElement('div'); c.className='caption'; c.innerHTML=html; row.appendChild(c); threadScroll(); }
 
+/* Le texte s'affichait sans un mot quand la synthèse échouait, sans rien expliquer.
+   On le signale une fois, avec la piste à vérifier en premier sur iPhone. */
+function maybeWarnNoAudio(){
+  if(ttsEverStarted || ttsWarned || !('speechSynthesis' in window)) return;
+  ttsWarned=true;
+  let m='🔇 <b>Le contrôle n’a pas été entendu</b> — le texte s’affiche, mais la voix n’a pas démarré.';
+  if(isIOS) m+=' Sur iPhone/iPad, vérifiez d’abord le <b>bouton silencieux</b> sur la tranche : '
+             + 'iOS y soumet aussi la synthèse vocale. Puis le volume, touches sur la tranche.';
+  m+=' Testez ensuite avec <b>🔊 Tester</b> dans le briefing.';
+  if(lastTtsError) m+=' <span class="sub">(erreur signalée : '+lastTtsError+')</span>';
+  sysMsg(m);
+}
+
 /* Le contrôle "parle" : points de frappe pendant la voix, texte révélé ensuite (lisible). */
 async function atcSay(text){
   const row=atcTyping(S.station);
   if($('chkSub').checked) atcReveal(row,text);
   await speak(text);
   atcReveal(row,text);
+  maybeWarnNoAudio();
   logLine('la','ATC ▸ '+text);
 }
 
